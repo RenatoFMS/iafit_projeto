@@ -1,19 +1,18 @@
 import math
 from collections import deque
+import numpy as np
 
-def calcular_angulo(p1, p2, p3):
-    """Calcula o ângulo trigonométrico formado por três pontos (x, y)."""
-    x1, y1 = p1
-    x2, y2 = p2
-    x3, y3 = p3
-    
-    radianos = math.atan2(y3 - y2, x3 - x2) - math.atan2(y1 - y2, x1 - x2)
-    angulo = abs(radianos * 180.0 / math.pi)
-    
+def calcular_angulo(a, b, c):
+    """Calcula o ângulo exato entre três pontos articulares."""
+    a = np.array(a)
+    b = np.array(b)
+    c = np.array(c)
+    radianos = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+    angulo = np.abs(radianos * 180.0 / np.pi)
     if angulo > 180.0:
-        angulo = 360.0 - angulo
-        
-    return angulo
+        angulo = 360 - angulo
+    return int(angulo) # Retorna número inteiro para facilitar a leitura 
+
 
 def calcular_porcentagem(angulo, angulo_inicio, angulo_fim):
     """Converte o ângulo em uma porcentagem de 0 a 100%."""

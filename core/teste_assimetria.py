@@ -2,20 +2,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+try:
+    from core.math_utils import calcular_angulo
+except ModuleNotFoundError:
+    from math_utils import calcular_angulo
+
 # 1. Inicialização do Motor MediaPipe
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
-
-def calcular_angulo(a, b, c):
-    """Calcula o ângulo exato entre três pontos articulares."""
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-    radianos = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
-    angulo = np.abs(radianos * 180.0 / np.pi)
-    if angulo > 180.0:
-        angulo = 360 - angulo
-    return int(angulo) # Retorna número inteiro para facilitar a leitura 
 
 # 2. Configuração da Captura de Vídeo (Webcam 0)
 cap = cv2.VideoCapture('teste_agachamento.mp4')
