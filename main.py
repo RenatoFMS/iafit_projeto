@@ -72,6 +72,7 @@ while True:
             else:
                 feedback_final = ""
                 cor_final = (255, 255, 255)
+                alerta_assimetria = False
                 
                 for res in resultados_ativos:
                     px, py = int(res["ponto_texto"][0]), int(res["ponto_texto"][1])
@@ -106,8 +107,13 @@ while True:
                     
                     feedback_final = res["feedback"]
                     cor_final = res["cor"]
+                    alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
                 
                 cv2.putText(frame, feedback_final, (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
+                
+                # Alerta de assimetria entre os braços (vermelho, letras grandes)
+                if alerta_assimetria:
+                    cv2.putText(frame, "ALERTA: ASSIMETRIA", (30, 140), cv2.FONT_HERSHEY_DUPLEX, 1.3, (0, 0, 255), 3, cv2.LINE_AA)
 
     # --- NOVO: INTERFACE RESPONSIVA ---
     # A barra preta agora vai da coordenada 0 até a 'largura_atual' da janela

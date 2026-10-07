@@ -51,8 +51,8 @@ with mp_pose.Pose(min_detection_confidence=0.7, min_tracking_confidence=0.7) as 
             pulso_dir = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
             
             # 4. Cálculo Angular Refatorado
-            angulo_esq = calcular_angulo(ombro_esq, cotovelo_esq, pulso_esq)
-            angulo_dir = calcular_angulo(ombro_dir, cotovelo_dir, pulso_dir)
+            angulo_esq = int(calcular_angulo(ombro_esq, cotovelo_esq, pulso_esq))
+            angulo_dir = int(calcular_angulo(ombro_dir, cotovelo_dir, pulso_dir))
             
             # 5. Lógica do Filtro de Assimetria
             diferenca = abs(angulo_esq - angulo_dir)
