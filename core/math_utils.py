@@ -36,3 +36,40 @@ class FiltroSuavizacao:
         
     def limpar(self):
         self.historico.clear()
+
+
+class ContadorRepeticoes:
+    """Conta repetições a partir da percentagem de amplitude (0-100).
+
+    Fases: 'subida' (percentagem a aumentar), 'descida' (a diminuir),
+    'topo' (>= limite_alto) e 'base' (<= limite_baixo).
+    Uma repetição é contada quando o movimento chega ao topo e volta à base.
+    """
+    def __init__(self, limite_baixo=10, limite_alto=90, tolerancia=2):
+        self.limite_baixo = limite_baixo
+        self.limite_alto = limite_alto
+        self.tolerancia = tolerancia
+        self.limpar()
+
+    def atualizar(self, porcentagem):
+        if porcentagem >= self.limite_alto:
+            self.fase = "topo"
+            self._atingiu_topo = True
+        elif porcentagem <= self.limite_baixo:
+            if self._atingiu_topo:
+                self.reps += 1
+                self._atingiu_topo = False
+            self.fase = "base"
+        elif self._ultima is not None:
+            if porcentagem > self._ultima + self.tolerancia:
+                self.fase = "subida"
+            elif porcentagem < self._ultima - self.tolerancia:
+                self.fase = "descida"
+        self._ultima = porcentagem
+        return self.reps, self.fase
+
+    def limpar(self):
+        self.reps = 0
+        self.fase = "base"
+        self._atingiu_topo = False
+        self._ultima = None

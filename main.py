@@ -2,10 +2,10 @@ import cv2
 from ultralytics import YOLO
 from core.config_exercicios import EXERCICIOS
 from core.motor_ia import processar_exercicio
-from core.math_utils import FiltroSuavizacao
+from core.math_utils import FiltroSuavizacao, ContadorRepeticoes
 
 # ==========================================
-FONTE_DE_VIDEO = "teste_agachamento.mp4" 
+FONTE_DE_VIDEO = 0
 # ==========================================
 
 print("Carregando motor IA IAFit...")
@@ -15,7 +15,8 @@ id_atual = "1"
 
 filtros_memoria = {
     'amplitude': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
-    'postura': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)}
+    'postura': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
+    'repeticoes': {'total': ContadorRepeticoes()}
 }
 
 def resetar_filtros():
@@ -73,6 +74,7 @@ while True:
                 feedback_final = ""
                 cor_final = (255, 255, 255)
                 alerta_assimetria = False
+                reps_final, fase_final = 0, "base"
                 
                 for res in resultados_ativos:
                     px, py = int(res["ponto_texto"][0]), int(res["ponto_texto"][1])
@@ -108,12 +110,19 @@ while True:
                     feedback_final = res["feedback"]
                     cor_final = res["cor"]
                     alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
+                    reps_final, fase_final = res.get("reps", 0), res.get("fase", "base")
                 
-                cv2.putText(frame, feedback_final, (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
+                cv2.putText(frame, f"Reps: {reps_final}  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(frame, feedback_final, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
                 
-                # Alerta de assimetria entre os braços (vermelho, letras grandes)
+                # Alerta de assimetria entre os braços (vermelho, dimensionado para caber no frame)
                 if alerta_assimetria:
-                    cv2.putText(frame, "ALERTA: ASSIMETRIA", (30, 140), cv2.FONT_HERSHEY_DUPLEX, 1.3, (0, 0, 255), 3, cv2.LINE_AA)
+                    texto_alerta = "ALERTA: ASSIMETRIA"
+                    escala_alerta, espessura_alerta = 0.8, 2
+                    (larg_txt, alt_txt), _ = cv2.getTextSize(texto_alerta, cv2.FONT_HERSHEY_DUPLEX, escala_alerta, espessura_alerta)
+                    ax = max(10, min(30, largura_atual - larg_txt - 10))
+                    ay = 135
+                    cv2.putText(frame, texto_alerta, (ax, ay), cv2.FONT_HERSHEY_DUPLEX, escala_alerta, (0, 0, 255), espessura_alerta, cv2.LINE_AA)
 
     # --- NOVO: INTERFACE RESPONSIVA ---
     # A barra preta agora vai da coordenada 0 até a 'largura_atual' da janela
@@ -123,6 +132,11 @@ while True:
     # O botão de SAIR usa a largura total para ficar ancorado sempre no canto direito
     cv2.rectangle(frame, (largura_atual - 140, 10), (largura_atual - 20, 35), (0, 0, 255), -1)
     cv2.putText(frame, "SAIR [Q]", (largura_atual - 125, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+    # Menu de atalhos no rodapé: pressione o número para trocar de exercício
+    cv2.rectangle(frame, (0, altura_atual - 30), (largura_atual, altura_atual), (0, 0, 0), -1)
+    texto_menu = "  ".join(f"[{k}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
+    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
     # -----------------------------------
 
     cv2.imshow(nome_janela, frame)

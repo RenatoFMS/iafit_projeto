@@ -1,8 +1,6 @@
 import math
-import mediapipe as mp
 from core.math_utils import calcular_angulo, calcular_porcentagem
-
-mp_pose = mp.solutions.pose
+from core.config_exercicios import EXERCICIOS
 
 # Índices COCO (YOLOv8-pose) dos braços, usados no filtro de assimetria
 BRACO_ESQ = (5, 7, 9)   # Ombro, Cotovelo, Pulso esquerdos
@@ -46,6 +44,10 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     angulo_bruto = calcular_angulo(p1, p2, p3)
     angulo_suave = filtros['amplitude'][melhor_lado].atualizar(angulo_bruto)
     porc = calcular_porcentagem(angulo_suave, config_exercicio["inicio"], config_exercicio["fim"])
+
+    # Contagem de repetições (fases subida/descida). Opcional: só se o contador existir em filtros.
+    contador = filtros.get('repeticoes', {}).get('total')
+    reps, fase = contador.atualizar(porc) if contador else (0, "base")
     
     cor = (255, 0, 0)
     feedback = "Em movimento..."
@@ -103,34 +105,56 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     resultados.append({
         "lado": melhor_lado, "porc": porc, "feedback": feedback, "cor": cor,
         "coords": (p1, p2, p3), "coords_postura": coords_postura, "coords_bracos": coords_bracos, "ponto_texto": p2,
-        "alerta_assimetria": alerta_assimetria, "angulo_braco_esq": angulo_esq, "angulo_braco_dir": angulo_dir
+        "alerta_assimetria": alerta_assimetria, "angulo_braco_esq": angulo_esq, "angulo_braco_dir": angulo_dir,
+        "reps": reps, "fase": fase
     })
         
     return resultados
 
+# Mapeamento MediaPipe (33 landmarks) -> índices COCO (17 keypoints) usados pelo motor
+_MP_PARA_COCO = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+
+def landmarks_mediapipe_para_keypoints(landmarks):
+    """Converte landmarks do MediaPipe para o formato [x, y, confiança] do YOLO/COCO."""
+    return [[landmarks[i].x, landmarks[i].y, landmarks[i].visibility] for i in _MP_PARA_COCO]
+
 # Dentro do seu loop principal de processamento do MediaPipe:
-def processar_desenvolvimento_ombro(landmarks):
-    # 1. Obter coordenadas do braço ESQUERDO (Ombro, Cotovelo, Pulso)
-    ombro_esq = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-    cotovelo_esq = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
-    pulso_esq = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
-    
-    # 2. Obter coordenadas do braço DIREITO (Ombro, Cotovelo, Pulso)
-    ombro_dir = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y]
-    cotovelo_dir = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
-    pulso_dir = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
-    
-    # 3. Calcular os ângulos simultaneamente
-    angulo_esq = calcular_angulo(ombro_esq, cotovelo_esq, pulso_esq)
-    angulo_dir = calcular_angulo(ombro_dir, cotovelo_dir, pulso_dir)
-    
-    # 4. Filtro de Assimetria (Diferença > 15 graus)
-    diferenca = abs(angulo_esq - angulo_dir)
-    alerta_assimetria = True if diferenca > 15 else False
-    
-    return {
-        "angulo_esquerdo": angulo_esq,
-        "angulo_direito": angulo_dir,
-        "diferenca_graus": diferenca,
-        "alerta_assimetria": alerta_assimetria
-    }
+def processar_desenvolvimento_ombro(landmarks, filtros):
+    """Desenvolvimento de Ombro (70° -> 160°) com MediaPipe.
+
+    Extrai ombro, cotovelo e pulso dos dois lados, calcula a percentagem de amplitude,
+    a contagem de repetições e o alerta_assimetria (diferença > 15°), devolvendo a
+    mesma lista de resultados que processar_exercicio.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["4"], filtros)
+
+
+def processar_rosca_biceps(landmarks, filtros):
+    """Rosca Bíceps (160° -> 40°) com MediaPipe.
+
+    Extrai ombro, cotovelo e pulso dos dois lados, calcula a percentagem de amplitude
+    (o ângulo diminui à medida que o movimento avança: 160° = braço esticado = 0%,
+    40° = contração no topo = 100%), a contagem de repetições e o alerta_assimetria
+    (diferença > 15°), devolvendo a mesma lista de resultados que processar_exercicio.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["1"], filtros)
+
+def processar_flexao(landmarks, filtros):
+    """Flexão de Braço (160° -> 80°) com MediaPipe.
+
+    Extrai ombro, cotovelo e pulso dos dois lados, calcula a percentagem de amplitude
+    (160° = braços esticados = 0%, 80° = fundo = 100%), a contagem de repetições, a
+    segurança do quadril (config '3') e o alerta_assimetria (diferença > 15°),
+    devolvendo a mesma lista de resultados que processar_exercicio.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["3"], filtros)
+
+# Exercícios com função dedicada (id da config_exercicios -> função de processamento)
+PROCESSADORES_EXERCICIO = {
+    "1": processar_rosca_biceps,
+    "3": processar_flexao,
+    "4": processar_desenvolvimento_ombro,
+}
