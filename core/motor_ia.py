@@ -88,7 +88,10 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
             coords_bracos = (bp1, bp2, bp3)
 
     # 5. Filtro de Assimetria (ambos os braços em simultâneo)
-    angulo_esq, angulo_dir, alerta_assimetria = calcular_assimetria(keypoints_data)
+    if config_exercicio.get("ignorar_assimetria"):
+        angulo_esq, angulo_dir, alerta_assimetria = None, None, False
+    else:
+        angulo_esq, angulo_dir, alerta_assimetria = calcular_assimetria(keypoints_data)
 
     # 6. Definição do Alerta
     if not postura_segura:
@@ -152,9 +155,20 @@ def processar_flexao(landmarks, filtros):
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["3"], filtros)
 
+def processar_abdominal(landmarks, filtros):
+    """Abdominal Supra (150° -> 70°) com MediaPipe, ângulo Ombro-Quadril-Joelho.
+
+    Executado de perfil, um dos lados pode ficar obstruído: o processar_exercicio escolhe
+    o lado com maior confiança na deteção e o alerta de assimetria fica desativado
+    (config '5' com ignorar_assimetria). Devolve a mesma lista de resultados dos restantes.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["5"], filtros)
+
 # Exercícios com função dedicada (id da config_exercicios -> função de processamento)
 PROCESSADORES_EXERCICIO = {
     "1": processar_rosca_biceps,
     "3": processar_flexao,
     "4": processar_desenvolvimento_ombro,
+    "5": processar_abdominal,
 }

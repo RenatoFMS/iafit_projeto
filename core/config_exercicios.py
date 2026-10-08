@@ -43,7 +43,8 @@ EXERCICIOS = {
     "5": {
         "nome": "Abdominal Supra",
         "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Tronco flexionando em direção ao joelho
-        "inicio": 120, "fim": 70,
+        "inicio": 150, "fim": 70,
+        "ignorar_assimetria": True, # De perfil, um lado pode estar obstruído: usa só o lado mais confiável
         "msg_fim": "Contracao OK! Desca.",
         "msg_inicio": "Suba o tronco."
     }
