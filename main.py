@@ -3,9 +3,10 @@ from ultralytics import YOLO
 from core.config_exercicios import EXERCICIOS
 from core.motor_ia import processar_exercicio
 from core.math_utils import FiltroSuavizacao, ContadorRepeticoes
+from core.firebase_client import salvar_treino
 
 # ==========================================
-FONTE_DE_VIDEO = 0
+FONTE_DE_VIDEO = "teste_agachamento.mp4"  # Pode ser '0' para webcam, ou caminho de vídeo
 # ==========================================
 
 print("Carregando motor IA IAFit...")
@@ -23,6 +24,12 @@ def resetar_filtros():
     for cat in filtros_memoria.values():
         for filtro in cat.values():
             filtro.limpar()
+
+def guardar_treino_atual():
+    """Envia o exercício atual e as suas repetições para a nuvem (só se reps > 0)."""
+    reps = filtros_memoria['repeticoes']['total'].reps
+    if reps > 0:
+        salvar_treino(EXERCICIOS[id_atual]["nome"], reps)
 
 print("\n====== MENU IAFIT ======")
 for chave, dados in EXERCICIOS.items():
@@ -141,12 +148,17 @@ while True:
 
     cv2.imshow(nome_janela, frame)
     
-    if cv2.getWindowProperty(nome_janela, cv2.WND_PROP_VISIBLE) < 1: break
+    if cv2.getWindowProperty(nome_janela, cv2.WND_PROP_VISIBLE) < 1:
+        guardar_treino_atual()
+        break
     tecla = cv2.waitKey(1) & 0xFF
     letra_pressionada = chr(tecla)
     
-    if tecla == ord('q') or tecla == ord('Q'): break
+    if tecla == ord('q') or tecla == ord('Q'):
+        guardar_treino_atual()
+        break
     elif letra_pressionada in EXERCICIOS and letra_pressionada != id_atual:
+        guardar_treino_atual()  # Antes de reiniciar a contagem
         id_atual = letra_pressionada
         resetar_filtros()
 

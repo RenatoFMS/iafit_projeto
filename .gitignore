@@ -2,3 +2,5 @@ venv/
 __pycache__/
 *.mp4
 *.pt
+firebase_key.json
+firebase-admin==6.2.0
