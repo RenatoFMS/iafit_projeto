@@ -1,6 +1,7 @@
 import math
 from collections import deque
 import numpy as np
+from core.voz_client import falar
 
 def calcular_angulo(a, b, c):
     """Calcula o ângulo exato entre três pontos articulares."""
@@ -58,6 +59,7 @@ class ContadorRepeticoes:
         elif porcentagem <= self.limite_baixo:
             if self._atingiu_topo:
                 self.reps += 1
+                falar(str(self.reps))
                 self._atingiu_topo = False
             self.fase = "base"
         elif self._ultima is not None:
