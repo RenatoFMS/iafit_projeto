@@ -95,5 +95,20 @@ EXERCICIOS = {
         "msg_inicio": "Desca o tronco.",
         "msg_erro": "ERRO: Mantenha as costas retas!",
         "msg_voz": "Endireite as costas"
+    },
+    "8": {
+        "nome": "Prancha Isométrica",
+        "tipo": "isometrico",
+        "lados": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Ombro, Quadril, Tornozelo
+        "postura": {"esq": (5, 11, 15), "dir": (6, 12, 16)},
+        "postura_vertical": False,
+        "limite_postura": 160, # Se ângulo < 160°, o quadril caiu
+        "regra_postura": "<",
+        "inicio": 180, "fim": 160,
+        "ignorar_assimetria": True,
+        "msg_fim": "Postura correta!",
+        "msg_inicio": "Segure a posicao.",
+        "msg_erro": "ERRO: Levante o quadril!",
+        "msg_voz": "Levante o quadril"
     }
 }

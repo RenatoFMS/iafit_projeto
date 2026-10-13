@@ -28,6 +28,8 @@ def calcular_assimetria(keypoints_data):
 
 def processar_exercicio(keypoints_data, config_exercicio, filtros):
     global ultimo_aviso
+    if config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", ""):
+        return processar_prancha(keypoints_data, filtros)
     resultados = []
     melhor_lado = None
     maior_confianca = 0
@@ -287,6 +289,92 @@ def processar_stiff(landmarks, filtros):
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["7"], filtros)
 
+def processar_prancha(landmarks, filtros):
+    """Prancha Isométrica (ângulo Ombro-Quadril-Tornozelo >= 160°).
+
+    Calcula o ângulo principal Ombro-Quadril-Tornozelo.
+    Se o ângulo for >= 160°, a postura está correta (o cronômetro avança).
+    Se for < 160°, o quadril caiu; a postura fica incorreta (o cronômetro pausa)
+    e o sistema usa a variável de cooldown (ultimo_aviso) para acionar falar('Levante o quadril').
+    """
+    global ultimo_aviso
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    config = EXERCICIOS.get("8", {})
+
+    # 1. Identifica o melhor lado visível
+    melhor_lado = None
+    maior_conf = 0
+    lados = config.get("lados", {"esq": (5, 11, 15), "dir": (6, 12, 16)})
+    for lado, indices in lados.items():
+        conf_total = sum(keypoints_data[i][2] for i in indices)
+        if conf_total > maior_conf:
+            maior_conf = conf_total
+            melhor_lado = lado
+
+    if not melhor_lado:
+        return []
+
+    p1_idx, p2_idx, p3_idx = lados[melhor_lado]
+    if (keypoints_data[p1_idx][2] < 0.5 or
+        keypoints_data[p2_idx][2] < 0.5 or
+        keypoints_data[p3_idx][2] < 0.5):
+        return []
+
+    p1 = keypoints_data[p1_idx][:2]  # Ombro
+    p2 = keypoints_data[p2_idx][:2]  # Quadril
+    p3 = keypoints_data[p3_idx][:2]  # Tornozelo
+
+    # 2. Ângulo principal Ombro-Quadril-Tornozelo
+    angulo_bruto = calcular_angulo(p1, p2, p3)
+    filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_amp.atualizar(angulo_bruto) if filtro_amp else angulo_bruto
+
+    # 3. Regra da Prancha: >= 160° postura correta, < 160° quadril caiu
+    postura_correta = angulo_suave >= 160.0
+
+    if postura_correta:
+        feedback = config.get("msg_fim", "Postura correta!")
+        cor = (0, 255, 0)  # Verde
+        fase = "sustentando"
+        porc = 100
+    else:
+        feedback = config.get("msg_erro", "ERRO: Levante o quadril!")
+        cor = (0, 0, 255)  # Vermelho
+        fase = "corrigir"
+        porc = int(max(0, min(100, (angulo_suave / 160.0) * 100)))
+
+        agora = time.time()
+        if agora - ultimo_aviso > 4:
+            falar(config.get("msg_voz", "Levante o quadril"))
+            ultimo_aviso = agora
+
+    # 4. Cronômetro Isométrico (avança se postura_correta=True, pausa se False)
+    cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+    if cronometro:
+        cronometro.atualizar(postura_correta=postura_correta)
+        segundos = cronometro.segundos
+    else:
+        segundos = 0
+
+    return [{
+        "lado": melhor_lado,
+        "porc": porc,
+        "feedback": feedback,
+        "cor": cor,
+        "coords": (p1, p2, p3),
+        "coords_postura": (p1, p2),
+        "coords_bracos": None,
+        "ponto_texto": p2,
+        "alerta_assimetria": False,
+        "angulo_braco_esq": None,
+        "angulo_braco_dir": None,
+        "reps": segundos,
+        "segundos": segundos,
+        "postura_correta": postura_correta,
+        "fase": fase
+    }]
+
 def resetar_cooldown_voz():
     """Reinicia o cooldown dos alertas de voz de postura."""
     global ultimo_aviso
@@ -301,4 +389,5 @@ PROCESSADORES_EXERCICIO = {
     "5": processar_abdominal,
     "6": processar_afundo,
     "7": processar_stiff,
+    "8": processar_prancha,
 }

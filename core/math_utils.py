@@ -79,3 +79,41 @@ class ContadorRepeticoes:
         self._atingiu_topo = False
         self._ultima = None
         self.tempo_ultima_rep = time.time()
+
+
+class CronometroIsometrico:
+    """Cronômetro para exercícios isométricos baseados em tempo (ex: Prancha).
+
+    Acumula o tempo total (em segundos) usando time.time(), avançando apenas
+    quando recebe postura_correta=True.
+    """
+    def __init__(self):
+        self.tempo_acumulado = 0.0
+        self.ultimo_tempo = None
+        self.tempo_ultima_atividade = time.time()
+        self.tempo_ultima_rep = self.tempo_ultima_atividade
+        self.limpar()
+
+    def acumular(self, postura_correta=True):
+        agora = time.time()
+        if self.ultimo_tempo is not None:
+            delta = agora - self.ultimo_tempo
+            if postura_correta and 0 < delta < 1.0:
+                self.tempo_acumulado += delta
+                self.tempo_ultima_atividade = agora
+                self.tempo_ultima_rep = agora
+        self.ultimo_tempo = agora
+        return self.tempo_acumulado
+
+    def atualizar(self, postura_correta=True):
+        return self.acumular(postura_correta)
+
+    @property
+    def segundos(self):
+        return int(self.tempo_acumulado)
+
+    def limpar(self):
+        self.tempo_acumulado = 0.0
+        self.ultimo_tempo = None
+        self.tempo_ultima_atividade = time.time()
+        self.tempo_ultima_rep = self.tempo_ultima_atividade

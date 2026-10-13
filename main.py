@@ -3,7 +3,7 @@ import cv2
 from ultralytics import YOLO
 from core.config_exercicios import EXERCICIOS
 from core.motor_ia import processar_exercicio, resetar_cooldown_voz
-from core.math_utils import FiltroSuavizacao, ContadorRepeticoes
+from core.math_utils import FiltroSuavizacao, ContadorRepeticoes, CronometroIsometrico
 from core.firebase_client import salvar_treino
 from core.voz_client import falar
 
@@ -19,7 +19,8 @@ id_atual = "1"
 filtros_memoria = {
     'amplitude': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
     'postura': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
-    'repeticoes': {'total': ContadorRepeticoes()}
+    'repeticoes': {'total': ContadorRepeticoes()},
+    'isometrico': {'total': CronometroIsometrico()}
 }
 
 def resetar_filtros():
@@ -29,10 +30,15 @@ def resetar_filtros():
     resetar_cooldown_voz()
 
 def guardar_treino_atual():
-    """Envia o exercício atual e as suas repetições para a nuvem (só se reps > 0)."""
-    reps = filtros_memoria['repeticoes']['total'].reps
-    if reps > 0:
-        salvar_treino(EXERCICIOS[id_atual]["nome"], reps)
+    """Envia o exercício atual e as suas repetições ou tempo para a nuvem."""
+    if id_atual == "8":
+        segundos = filtros_memoria['isometrico']['total'].segundos
+        if segundos > 0:
+            salvar_treino(EXERCICIOS[id_atual]["nome"], segundos)
+    else:
+        reps = filtros_memoria['repeticoes']['total'].reps
+        if reps > 0:
+            salvar_treino(EXERCICIOS[id_atual]["nome"], reps)
 
 print("\n====== MENU IAFIT ======")
 for chave, dados in EXERCICIOS.items():
@@ -53,13 +59,21 @@ while camera.isOpened():
             break
 
     # Verificação de encerramento automático da série por inatividade (Timeout > 6.0s)
-    contador = filtros_memoria['repeticoes']['total']
-    if contador.reps > 0 and (time.time() - contador.tempo_ultima_rep) > 6.0:
-        reps_feitas = contador.reps
-        contador.reps = 0
-        contador.tempo_ultima_rep = time.time()
-        falar("Série concluída")
-        salvar_treino(EXERCICIOS[id_atual]["nome"], reps_feitas)
+    if id_atual == "8":
+        cronometro = filtros_memoria['isometrico']['total']
+        if cronometro.segundos > 0 and (time.time() - cronometro.tempo_ultima_atividade) > 6.0:
+            segundos_feitos = cronometro.segundos
+            cronometro.limpar()
+            falar("Série concluída")
+            salvar_treino(EXERCICIOS[id_atual]["nome"], segundos_feitos)
+    else:
+        contador = filtros_memoria['repeticoes']['total']
+        if contador.reps > 0 and (time.time() - contador.tempo_ultima_rep) > 6.0:
+            reps_feitas = contador.reps
+            contador.reps = 0
+            contador.tempo_ultima_rep = time.time()
+            falar("Série concluída")
+            salvar_treino(EXERCICIOS[id_atual]["nome"], reps_feitas)
 
 
     # --- NOVO: REDIMENSIONAMENTO INTELIGENTE ---
@@ -132,7 +146,11 @@ while camera.isOpened():
                     alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
                     reps_final, fase_final = res.get("reps", 0), res.get("fase", "base")
                 
-                cv2.putText(frame, f"Reps: {reps_final}  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+                if id_atual == "8":
+                    segundos_atuais = filtros_memoria['isometrico']['total'].segundos
+                    cv2.putText(frame, f"Tempo: {segundos_atuais}s  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+                else:
+                    cv2.putText(frame, f"Reps: {reps_final}  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(frame, feedback_final, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
                 
                 # Alerta de assimetria entre os braços (vermelho, dimensionado para caber no frame)
