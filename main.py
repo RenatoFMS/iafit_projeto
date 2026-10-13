@@ -1,9 +1,11 @@
+import time
 import cv2
 from ultralytics import YOLO
 from core.config_exercicios import EXERCICIOS
 from core.motor_ia import processar_exercicio, resetar_cooldown_voz
 from core.math_utils import FiltroSuavizacao, ContadorRepeticoes
 from core.firebase_client import salvar_treino
+from core.voz_client import falar
 
 # ==========================================
 FONTE_DE_VIDEO = "teste_agachamento.mp4"  # Pode ser '0' para webcam, ou caminho de vídeo
@@ -40,7 +42,7 @@ print("========================")
 nome_janela = "IAFit - Scanner Profissional"
 cv2.namedWindow(nome_janela)
 
-while True:
+while camera.isOpened():
     sucesso, frame = camera.read()
     
     if not sucesso: 
@@ -49,6 +51,16 @@ while True:
             continue
         else:
             break
+
+    # Verificação de encerramento automático da série por inatividade (Timeout > 6.0s)
+    contador = filtros_memoria['repeticoes']['total']
+    if contador.reps > 0 and (time.time() - contador.tempo_ultima_rep) > 6.0:
+        reps_feitas = contador.reps
+        contador.reps = 0
+        contador.tempo_ultima_rep = time.time()
+        falar("Série concluída")
+        salvar_treino(EXERCICIOS[id_atual]["nome"], reps_feitas)
+
 
     # --- NOVO: REDIMENSIONAMENTO INTELIGENTE ---
     # Limita o tamanho máximo do vídeo para caber confortavelmente em monitores comuns

@@ -1,4 +1,5 @@
 import math
+import time
 from collections import deque
 import numpy as np
 from core.voz_client import falar
@@ -50,6 +51,7 @@ class ContadorRepeticoes:
         self.limite_baixo = limite_baixo
         self.limite_alto = limite_alto
         self.tolerancia = tolerancia
+        self.tempo_ultima_rep = time.time()
         self.limpar()
 
     def atualizar(self, porcentagem):
@@ -59,6 +61,7 @@ class ContadorRepeticoes:
         elif porcentagem <= self.limite_baixo:
             if self._atingiu_topo:
                 self.reps += 1
+                self.tempo_ultima_rep = time.time()
                 falar(str(self.reps))
                 self._atingiu_topo = False
             self.fase = "base"
@@ -75,3 +78,4 @@ class ContadorRepeticoes:
         self.fase = "base"
         self._atingiu_topo = False
         self._ultima = None
+        self.tempo_ultima_rep = time.time()
