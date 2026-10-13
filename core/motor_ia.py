@@ -41,17 +41,22 @@ from core.analise_biomecanica import (
     validar_postura_agachamento_isometrico,
     validar_polichinelo,
     verificar_fora_enquadramento,
+    verificar_fadiga,
     calcular_calorias,
 )
 
 # Cooldown global dos avisos de voz de postura e assimetria (4 segundos)
 ultimo_aviso = 0
 
+# Cooldown específico para avisos motivacionais de fadiga (pelo menos 10 segundos)
+ultimo_aviso_fadiga = 0
+
 
 def resetar_cooldown_voz():
-    """Reinicia o cooldown dos alertas de voz."""
-    global ultimo_aviso
+    """Reinicia o cooldown dos alertas de voz e fadiga."""
+    global ultimo_aviso, ultimo_aviso_fadiga
     ultimo_aviso = 0
+    ultimo_aviso_fadiga = 0
 
 
 def _executar_aviso_voz(mensagem, cooldown=4):
@@ -60,6 +65,18 @@ def _executar_aviso_voz(mensagem, cooldown=4):
     agora = time.time()
     if agora - ultimo_aviso > cooldown:
         falar(mensagem)
+        ultimo_aviso = agora
+        return True
+    return False
+
+
+def _executar_aviso_fadiga(mensagem="Força, não desista, mantenha o ritmo!", cooldown_fadiga=10, cooldown_global=4):
+    """Aciona aviso sonoro de incentivo à fadiga respeitando o cooldown específico (10s) e global (4s)."""
+    global ultimo_aviso, ultimo_aviso_fadiga
+    agora = time.time()
+    if agora - ultimo_aviso_fadiga > cooldown_fadiga and agora - ultimo_aviso > cooldown_global:
+        falar(mensagem)
+        ultimo_aviso_fadiga = agora
         ultimo_aviso = agora
         return True
     return False
@@ -123,7 +140,15 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
 
     # 3. Contagem de repetições (fases subida/descida/topo/base)
     contador = filtros.get('repeticoes', {}).get('total')
+    reps_anteriores = contador.reps if contador else 0
     reps, fase = contador.atualizar(porc) if contador else (0, "base")
+
+    # Deteção Algorítmica de Fadiga
+    fadiga_detectada = False
+    if contador and reps > reps_anteriores:
+        if verificar_fadiga(contador.tempos_repeticoes):
+            fadiga_detectada = True
+            _executar_aviso_fadiga("Força, não desista, mantenha o ritmo!")
 
     # 4. Avaliação de segurança da postura
     postura_segura, coords_postura, _ = analisar_seguranca_postura(
@@ -166,7 +191,7 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
         "lado": melhor_lado, "porc": porc, "feedback": feedback, "cor": cor,
         "coords": (p1, p2, p3), "coords_postura": coords_postura, "coords_bracos": coords_bracos, "ponto_texto": p2,
         "alerta_assimetria": alerta_assimetria, "angulo_braco_esq": angulo_esq, "angulo_braco_dir": angulo_dir,
-        "reps": reps, "fase": fase
+        "reps": reps, "fase": fase, "fadiga_detectada": fadiga_detectada
     }]
 
 
@@ -635,7 +660,15 @@ def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
     porc, postura_segura, coords_bracos, coords_pernas, msg_erro = res_poli
 
     contador = filtros.get('repeticoes', {}).get('total')
+    reps_anteriores = contador.reps if contador else 0
     reps, fase = contador.atualizar(porc) if contador else (0, "base")
+
+    # Deteção Algorítmica de Fadiga
+    fadiga_detectada = False
+    if contador and reps > reps_anteriores:
+        if verificar_fadiga(contador.tempos_repeticoes):
+            fadiga_detectada = True
+            _executar_aviso_fadiga("Força, não desista, mantenha o ritmo!")
 
     if not postura_segura:
         feedback = f"ERRO: {msg_erro}"
@@ -673,7 +706,8 @@ def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
         "angulo_braco_esq": None,
         "angulo_braco_dir": None,
         "reps": reps,
-        "fase": fase
+        "fase": fase,
+        "fadiga_detectada": fadiga_detectada
     }]
 
 

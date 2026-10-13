@@ -895,3 +895,22 @@ def validar_polichinelo(landmarks_ou_keypoints, filtros=None):
 
     return porc, postura_segura, coords_bracos, coords_pernas, msg_erro
 
+
+def verificar_fadiga(tempos_repeticoes):
+    """Verifica se há fadiga muscular pela desaceleração das repetições.
+
+    Se houver pelo menos 4 repetições registadas, calcula o tempo médio das 3 primeiras
+    (ritmo base). Se a última repetição demorar mais de 1.6x (60% mais lenta) do que
+    o ritmo base, retorna True (fadiga detetada). Caso contrário, retorna False.
+    """
+    if not tempos_repeticoes or len(tempos_repeticoes) < 4:
+        return False
+
+    ritmo_base = sum(tempos_repeticoes[:3]) / 3.0
+    if ritmo_base <= 0:
+        return False
+
+    ultima_rep = tempos_repeticoes[-1]
+    return ultima_rep > 1.6 * ritmo_base
+
+

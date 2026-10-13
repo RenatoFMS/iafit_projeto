@@ -53,6 +53,8 @@ class ContadorRepeticoes:
         self.tolerancia = tolerancia
         self.tempo_ultima_rep = time.time()
         self.tempo_inicio_serie = None
+        self.tempos_repeticoes = []
+        self.ultimo_timestamp_rep = None
         self.limpar()
 
     def atualizar(self, porcentagem):
@@ -68,9 +70,17 @@ class ContadorRepeticoes:
         elif porcentagem <= self.limite_baixo:
             if self._atingiu_topo:
                 self.reps += 1
-                self.tempo_ultima_rep = time.time()
+                agora = time.time()
+                self.tempo_ultima_rep = agora
                 if self.tempo_inicio_serie is None:
-                    self.tempo_inicio_serie = time.time()
+                    self.tempo_inicio_serie = agora
+
+                # Grava a duração desta repetição
+                tempo_ref = self.ultimo_timestamp_rep if self.ultimo_timestamp_rep is not None else self.tempo_inicio_serie
+                duracao_rep = agora - tempo_ref
+                self.tempos_repeticoes.append(round(duracao_rep, 2))
+                self.ultimo_timestamp_rep = agora
+
                 falar(str(self.reps))
                 self._atingiu_topo = False
             self.fase = "base"
@@ -91,6 +101,8 @@ class ContadorRepeticoes:
         self._ultima = None
         self.tempo_ultima_rep = time.time()
         self.tempo_inicio_serie = None
+        self.tempos_repeticoes = []
+        self.ultimo_timestamp_rep = None
 
 
 class CronometroIsometrico:

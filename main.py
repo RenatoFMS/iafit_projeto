@@ -218,6 +218,10 @@ while camera.isOpened():
             ay = 135
             cv2.putText(frame, texto_alerta, (ax, ay), cv2.FONT_HERSHEY_DUPLEX, escala_alerta, (0, 0, 255), espessura_alerta, cv2.LINE_AA)
 
+        # Aviso visual de fadiga muscular
+        if any(res.get("fadiga_detectada", False) for res in resultados_ativos):
+            cv2.putText(frame, "FADIGA DETECTADA: FORCA!", (30, 135), cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 140, 255), 2, cv2.LINE_AA)
+
     # --- NOVO: INTERFACE RESPONSIVA ---
     # A barra preta agora vai da coordenada 0 até a 'largura_atual' da janela
     cv2.rectangle(frame, (0, 0), (largura_atual, 45), (0, 0, 0), -1)
