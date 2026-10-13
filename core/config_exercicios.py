@@ -3,6 +3,7 @@
 EXERCICIOS = {
     "1": {
         "nome": "Rosca Biceps",
+        "met": 2.8,
         "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
         "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Quadril, Ombro, Cotovelo (travar cotovelo ao lado do corpo)
         "postura_vertical": False,
@@ -16,6 +17,7 @@ EXERCICIOS = {
     },
     "2": {
         "nome": "Agachamento",
+        "met": 5.0,
         "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)},
         "postura": {"esq": (5, 11), "dir": (6, 12)}, 
         "postura_vertical": True, 
@@ -30,6 +32,7 @@ EXERCICIOS = {
     },
     "3": {
         "nome": "Flexao de Braco",
+        "met": 3.8,
         "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, 
         "postura": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Prancha: Ombro, Quadril, Tornozelo
         "postura_vertical": False,
@@ -43,6 +46,7 @@ EXERCICIOS = {
     },
     "4": {
         "nome": "Desenvolvimento Ombro",
+        "met": 3.0,
         "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
         "postura": {"esq": (5, 11), "dir": (6, 12)}, # Ombro, Quadril
         "postura_vertical": True,
@@ -56,6 +60,7 @@ EXERCICIOS = {
     },
     "5": {
         "nome": "Abdominal Supra",
+        "met": 2.8,
         "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Tronco flexionando em direção ao joelho
         "postura": {"esq": (0, 5, 11), "dir": (0, 6, 12)}, # Nariz, Ombro, Quadril (evitar puxar a cervical)
         "postura_vertical": False,
@@ -70,6 +75,7 @@ EXERCICIOS = {
     },
     "6": {
         "nome": "Afundo (Lunge)",
+        "met": 4.0,
         "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Quadril, Joelho, Tornozelo
         "postura": {"esq": (5, 11, 14), "dir": (6, 12, 13)}, # Ombro, Quadril, Joelho traseiro
         "postura_vertical": False,
@@ -84,6 +90,7 @@ EXERCICIOS = {
     },
     "7": {
         "nome": "Stiff",
+        "met": 4.0,
         "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Ombro, Quadril, Joelho (extensão do quadril)
         "postura": {"esq": (5, 11), "dir": (6, 12)}, # Ombro, Quadril em relação à vertical
         "postura_vertical": True,
@@ -99,6 +106,7 @@ EXERCICIOS = {
     "8": {
         "nome": "Prancha Isométrica",
         "tipo": "isometrico",
+        "met": 3.5,
         "lados": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Ombro, Quadril, Tornozelo
         "postura": {"esq": (5, 11, 15), "dir": (6, 12, 16)},
         "postura_vertical": False,

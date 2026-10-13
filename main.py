@@ -3,7 +3,11 @@ import cv2
 import mediapipe as mp
 from core.config_exercicios import EXERCICIOS
 from core.motor_ia import processar_exercicio, resetar_cooldown_voz
-from core.analise_biomecanica import landmarks_mediapipe_para_keypoints, criar_detector_pose
+from core.analise_biomecanica import (
+    landmarks_mediapipe_para_keypoints,
+    criar_detector_pose,
+    calcular_calorias,
+)
 from core.math_utils import FiltroSuavizacao, ContadorRepeticoes, CronometroIsometrico
 from core.firebase_client import salvar_treino
 from core.voz_client import falar
@@ -37,14 +41,25 @@ def resetar_filtros():
 
 def guardar_treino_atual():
     """Envia o exercício atual e as suas repetições ou tempo para a nuvem."""
+    config = EXERCICIOS.get(id_atual, {})
+    nome_ex = config.get("nome", "Exercício")
+    met_ex = config.get("met", 3.0)
     if id_atual == "8":
         segundos = filtros_memoria['isometrico']['total'].segundos
         if segundos > 0:
-            salvar_treino(EXERCICIOS[id_atual]["nome"], segundos)
+            calorias = calcular_calorias(segundos, met_ex)
+            print(f"Série concluída: {segundos}s | Gasto estimado: {calorias:.1f} kcal")
+            salvar_treino(nome_ex, segundos, calorias=calorias)
     else:
-        reps = filtros_memoria['repeticoes']['total'].reps
+        contador = filtros_memoria['repeticoes']['total']
+        reps = contador.reps
         if reps > 0:
-            salvar_treino(EXERCICIOS[id_atual]["nome"], reps)
+            agora = time.time()
+            tempo_inicio = contador.tempo_inicio_serie if contador.tempo_inicio_serie is not None else contador.tempo_ultima_rep
+            tempo_serie = max(0.0, agora - tempo_inicio)
+            calorias = calcular_calorias(tempo_serie, met_ex)
+            print(f"Série concluída: {reps} reps | Gasto estimado: {calorias:.1f} kcal")
+            salvar_treino(nome_ex, reps, calorias=calorias)
 
 print("\n====== MENU IAFIT ======")
 for chave, dados in EXERCICIOS.items():
@@ -69,17 +84,28 @@ while camera.isOpened():
         cronometro = filtros_memoria['isometrico']['total']
         if cronometro.segundos > 0 and (time.time() - cronometro.tempo_ultima_atividade) > 6.0:
             segundos_feitos = cronometro.segundos
+            tempo_serie = segundos_feitos
+            met_ex = EXERCICIOS[id_atual].get("met", 3.5)
+            calorias = calcular_calorias(tempo_serie, met_ex)
             cronometro.limpar()
             falar("Série concluída")
-            salvar_treino(EXERCICIOS[id_atual]["nome"], segundos_feitos)
+            print(f"Série concluída: {segundos_feitos}s | Gasto estimado: {calorias:.1f} kcal")
+            salvar_treino(EXERCICIOS[id_atual]["nome"], segundos_feitos, calorias=calorias)
     else:
         contador = filtros_memoria['repeticoes']['total']
         if contador.reps > 0 and (time.time() - contador.tempo_ultima_rep) > 6.0:
             reps_feitas = contador.reps
+            agora = time.time()
+            tempo_inicio = contador.tempo_inicio_serie if contador.tempo_inicio_serie is not None else contador.tempo_ultima_rep
+            tempo_serie = max(0.0, agora - tempo_inicio)
+            met_ex = EXERCICIOS[id_atual].get("met", 3.0)
+            calorias = calcular_calorias(tempo_serie, met_ex)
             contador.reps = 0
-            contador.tempo_ultima_rep = time.time()
+            contador.tempo_ultima_rep = agora
+            contador.tempo_inicio_serie = None
             falar("Série concluída")
-            salvar_treino(EXERCICIOS[id_atual]["nome"], reps_feitas)
+            print(f"Série concluída: {reps_feitas} reps | Gasto estimado: {calorias:.1f} kcal")
+            salvar_treino(EXERCICIOS[id_atual]["nome"], reps_feitas, calorias=calorias)
 
 
     # --- NOVO: REDIMENSIONAMENTO INTELIGENTE ---

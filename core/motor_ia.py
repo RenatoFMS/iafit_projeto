@@ -20,6 +20,7 @@ from core.analise_biomecanica import (
     calcular_assimetria,
     verificar_assimetria_bracos,
     validar_postura_prancha,
+    calcular_calorias,
 )
 
 # Cooldown global dos avisos de voz de postura e assimetria (4 segundos)

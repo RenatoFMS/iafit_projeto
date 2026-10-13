@@ -52,22 +52,33 @@ class ContadorRepeticoes:
         self.limite_alto = limite_alto
         self.tolerancia = tolerancia
         self.tempo_ultima_rep = time.time()
+        self.tempo_inicio_serie = None
         self.limpar()
 
     def atualizar(self, porcentagem):
+        # Guarda o tempo em que a primeira repetição começou
+        if self.tempo_inicio_serie is None and porcentagem > self.limite_baixo:
+            self.tempo_inicio_serie = time.time()
+
         if porcentagem >= self.limite_alto:
             self.fase = "topo"
             self._atingiu_topo = True
+            if self.tempo_inicio_serie is None:
+                self.tempo_inicio_serie = time.time()
         elif porcentagem <= self.limite_baixo:
             if self._atingiu_topo:
                 self.reps += 1
                 self.tempo_ultima_rep = time.time()
+                if self.tempo_inicio_serie is None:
+                    self.tempo_inicio_serie = time.time()
                 falar(str(self.reps))
                 self._atingiu_topo = False
             self.fase = "base"
         elif self._ultima is not None:
             if porcentagem > self._ultima + self.tolerancia:
                 self.fase = "subida"
+                if self.tempo_inicio_serie is None:
+                    self.tempo_inicio_serie = time.time()
             elif porcentagem < self._ultima - self.tolerancia:
                 self.fase = "descida"
         self._ultima = porcentagem
@@ -79,6 +90,7 @@ class ContadorRepeticoes:
         self._atingiu_topo = False
         self._ultima = None
         self.tempo_ultima_rep = time.time()
+        self.tempo_inicio_serie = None
 
 
 class CronometroIsometrico:

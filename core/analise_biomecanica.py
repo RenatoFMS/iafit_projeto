@@ -264,3 +264,15 @@ def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
 
     postura_correta = angulo_suave >= 160.0
     return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)
+
+
+def calcular_calorias(tempo_segundos, met, peso_kg=70.0):
+    """Calcula a estimativa de gasto calórico (kcal) a partir do MET e da duração.
+
+    Fórmula: calorias = (tempo_segundos / 3600) * met * peso_kg
+    """
+    if tempo_segundos <= 0 or met <= 0 or peso_kg <= 0:
+        return 0.0
+    calorias = (tempo_segundos / 3600.0) * met * peso_kg
+    return round(calorias, 2)
+
