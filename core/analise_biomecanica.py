@@ -155,6 +155,14 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
         return validar_postura_bulgaro(keypoints_data, melhor_lado, filtros)
     elif "Encolhimento" in nome:
         return validar_postura_encolhimento(keypoints_data, melhor_lado, filtros)
+    elif "Abdominal Infra" in nome:
+        return validar_postura_abdominal_infra(keypoints_data, melhor_lado, filtros)
+    elif "Remada Alta" in nome:
+        return validar_postura_remada_alta(keypoints_data, melhor_lado, filtros)
+    elif "Bom Dia" in nome:
+        return validar_postura_bom_dia(keypoints_data, melhor_lado, filtros)
+    elif "Triceps Coice" in nome:
+        return validar_postura_triceps_coice(keypoints_data, melhor_lado, filtros)
 
     if not config_exercicio.get("postura"):
         return postura_segura, coords_postura, angulo_seg_suave
@@ -671,4 +679,219 @@ def calcular_calorias(tempo_segundos, met, peso_kg=70.0):
         return 0.0
     calorias = (tempo_segundos / 3600.0) * met * peso_kg
     return round(calorias, 2)
+
+
+def verificar_fora_enquadramento(keypoints_data, config_exercicio):
+    """Verifica se landmarks existem e se a visibilidade (confiança) dos pontos principais
+    do exercício atual é inferior a 0.3.
+
+    Retorna True se o usuário saiu do enquadramento ou não foi detectado, False se visível.
+    """
+    if keypoints_data is None or len(keypoints_data) == 0:
+        return True
+
+    # Suporta se receber landmarks MediaPipe diretamente
+    if hasattr(keypoints_data[0], 'x') or (len(keypoints_data) == 33 and not isinstance(keypoints_data[0], (list, tuple))):
+        keypoints_data = landmarks_mediapipe_para_keypoints(keypoints_data)
+
+    nome = config_exercicio.get("nome", "")
+    if "Polichinelo" in nome:
+        # Pontos principais do polichinelo: ombros (5, 6), pulsos (9, 10), tornozelos (15, 16)
+        pontos_obrigatorios = [5, 6, 9, 10, 15, 16]
+        for p in pontos_obrigatorios:
+            if p >= len(keypoints_data) or keypoints_data[p][2] < 0.3:
+                return True
+        return False
+
+    lados = config_exercicio.get("lados", {})
+    if not lados:
+        confs = [kp[2] for kp in keypoints_data if len(kp) > 2]
+        return not confs or (sum(confs) / len(confs)) < 0.3
+
+    # Verifica se há pelo menos um lado onde TODOS os pontos principais tenham confiança >= 0.3
+    lado_valido = False
+    for indices in lados.values():
+        if all(idx < len(keypoints_data) and keypoints_data[idx][2] >= 0.3 for idx in indices):
+            lado_valido = True
+            break
+
+    return not lado_valido
+
+
+def validar_postura_abdominal_infra(keypoints_data, melhor_lado, filtros=None):
+    """Valida a postura no Abdominal Infra (joelhos estendidos >= 130°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12
+    j_idx = 13 if melhor_lado == "esq" else 14
+    t_idx = 15 if melhor_lado == "esq" else 16
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[q_idx][:2]
+    sp2 = keypoints_data[j_idx][:2]
+    sp3 = keypoints_data[t_idx][:2]
+    coords_postura = (sp1, sp2)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave >= 130.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_remada_alta(keypoints_data, melhor_lado, filtros=None):
+    """Valida a postura ereta na Remada Alta (Ombro-Quadril vs vertical <= 25°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    s1_idx = 5 if melhor_lado == "esq" else 6
+    s2_idx = 11 if melhor_lado == "esq" else 12
+
+    if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
+        return True, None, None
+
+    sp1 = keypoints_data[s1_idx][:2]
+    sp2 = keypoints_data[s2_idx][:2]
+    coords_postura = (sp1, sp2)
+    sp3 = (sp2[0], sp2[1] - 50)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 25.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_bom_dia(keypoints_data, melhor_lado, filtros=None):
+    """Valida as pernas retas no exercício Bom Dia (Quadril-Joelho-Tornozelo >= 150°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12
+    j_idx = 13 if melhor_lado == "esq" else 14
+    t_idx = 15 if melhor_lado == "esq" else 16
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[q_idx][:2]
+    sp2 = keypoints_data[j_idx][:2]
+    sp3 = keypoints_data[t_idx][:2]
+    coords_postura = (sp2, sp3)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave >= 150.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_triceps_coice(keypoints_data, melhor_lado, filtros=None):
+    """Valida a altura do cotovelo no Tríceps Coice (Quadril-Ombro-Cotovelo >= 25°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12
+    o_idx = 5 if melhor_lado == "esq" else 6
+    c_idx = 7 if melhor_lado == "esq" else 8
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[q_idx][:2]
+    sp2 = keypoints_data[o_idx][:2]
+    sp3 = keypoints_data[c_idx][:2]
+    coords_postura = (sp2, sp3)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave >= 25.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_agachamento_isometrico(landmarks_ou_keypoints, filtros=None):
+    """Valida a postura do Agachamento Isométrico (ângulo Joelho ~90°: entre 75° e 105°).
+
+    Retorna (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao) ou None.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
+    lados_joelho = {"esq": (11, 13, 15), "dir": (12, 14, 16)}
+    melhor_lado, indices = selecionar_melhor_lado(keypoints_data, lados_joelho)
+    if not melhor_lado:
+        return None
+
+    p1 = keypoints_data[indices[0]][:2]  # Quadril
+    p2 = keypoints_data[indices[1]][:2]  # Joelho
+    p3 = keypoints_data[indices[2]][:2]  # Tornozelo
+
+    angulo_bruto = calcular_angulo(p1, p2, p3)
+    filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_amp.atualizar(angulo_bruto) if filtro_amp else angulo_bruto
+
+    if 75.0 <= angulo_suave <= 105.0:
+        postura_correta = True
+        msg_correcao = ""
+    elif angulo_suave > 105.0:
+        postura_correta = False
+        msg_correcao = "Desca mais o quadril"
+    else:
+        postura_correta = False
+        msg_correcao = "Suba um pouco o quadril"
+
+    return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao
+
+
+def validar_polichinelo(landmarks_ou_keypoints, filtros=None):
+    """Calcula porcentagem de execução e validação do Polichinelo.
+
+    Lógica mista: braços sobem no eixo Y e pernas abrem na distância dos tornozelos.
+    Retorna (porc, postura_segura, coords_bracos, coords_pernas, msg_erro) ou None.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
+    pontos_obrigatorios = [5, 6, 9, 10, 11, 12, 15, 16]
+    if any(p >= len(keypoints_data) or keypoints_data[p][2] < 0.3 for p in pontos_obrigatorios):
+        return None
+
+    p_ombro_esq, p_ombro_dir = keypoints_data[5][:2], keypoints_data[6][:2]
+    p_pulso_esq, p_pulso_dir = keypoints_data[9][:2], keypoints_data[10][:2]
+    p_quadril_esq, p_quadril_dir = keypoints_data[11][:2], keypoints_data[12][:2]
+    p_tornozelo_esq, p_tornozelo_dir = keypoints_data[15][:2], keypoints_data[16][:2]
+
+    larg_ombros = max(20.0, abs(p_ombro_dir[0] - p_ombro_esq[0]))
+    y_ombros = (p_ombro_esq[1] + p_ombro_dir[1]) / 2.0
+    y_quadril = (p_quadril_esq[1] + p_quadril_dir[1]) / 2.0
+    y_pulsos = (p_pulso_esq[1] + p_pulso_dir[1]) / 2.0
+
+    # 1. Porcentagem braços
+    altura_mov_bracos = max(1.0, y_quadril - (y_ombros - larg_ombros * 0.5))
+    porc_bracos = max(0.0, min(100.0, ((y_quadril - y_pulsos) / altura_mov_bracos) * 100.0))
+
+    # 2. Porcentagem pernas
+    dist_tornozelos = abs(p_tornozelo_dir[0] - p_tornozelo_esq[0])
+    abertura_min = larg_ombros * 0.8
+    abertura_max = larg_ombros * 2.0
+    porc_pernas = max(0.0, min(100.0, ((dist_tornozelos - abertura_min) / max(1.0, abertura_max - abertura_min)) * 100.0))
+
+    # Porcentagem mista combinada
+    porc_bruta = (porc_bracos * 0.5) + (porc_pernas * 0.5)
+    filtro_amp = filtros.get('amplitude', {}).get('esq') if filtros else None
+    porc_suave = filtro_amp.atualizar(porc_bruta) if filtro_amp else porc_bruta
+    porc = int(max(0, min(100, porc_suave)))
+
+    # Validação de sincronia: braços e pernas devem abrir/fechar juntos
+    postura_segura = abs(porc_bracos - porc_pernas) <= 45.0
+    msg_erro = "" if postura_segura else "Sincronize bracos e pernas"
+
+    coords_bracos = (p_ombro_esq, p_pulso_esq)
+    coords_pernas = (p_tornozelo_esq, p_tornozelo_dir)
+
+    return porc, postura_segura, coords_bracos, coords_pernas, msg_erro
 

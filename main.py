@@ -44,7 +44,7 @@ def guardar_treino_atual():
     config = EXERCICIOS.get(id_atual, {})
     nome_ex = config.get("nome", "Exercício")
     met_ex = config.get("met", 3.0)
-    if id_atual in ("8", "22") or config.get("tipo") == "isometrico":
+    if id_atual in ("8", "22", "29") or config.get("tipo") == "isometrico":
         segundos = filtros_memoria['isometrico']['total'].segundos
         if segundos > 0:
             calorias = calcular_calorias(segundos, met_ex)
@@ -80,7 +80,7 @@ while camera.isOpened():
             break
 
     # Verificação de encerramento automático da série por inatividade (Timeout > 6.0s)
-    if id_atual in ("8", "22") or EXERCICIOS.get(id_atual, {}).get("tipo") == "isometrico":
+    if id_atual in ("8", "22", "29") or EXERCICIOS.get(id_atual, {}).get("tipo") == "isometrico":
         cronometro = filtros_memoria['isometrico']['total']
         if cronometro.segundos > 0 and (time.time() - cronometro.tempo_ultima_atividade) > 6.0:
             segundos_feitos = cronometro.segundos
@@ -137,26 +137,38 @@ while camera.isOpened():
         
     nome_exercicio = config_atual["nome"]
     
-    if results.pose_landmarks:
-        pontos_completos = landmarks_mediapipe_para_keypoints(
-            results.pose_landmarks.landmark, largura=largura_atual, altura=altura_atual
-        )
-        resultados_ativos = processar_exercicio(pontos_completos, config_atual, filtros_memoria)
-        
-        if len(resultados_ativos) == 0:
-            cv2.putText(frame, "Ajuste sua posicao (corpo nao encontrado)", (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+    pontos_completos = landmarks_mediapipe_para_keypoints(
+        results.pose_landmarks.landmark, largura=largura_atual, altura=altura_atual
+    ) if results.pose_landmarks else None
+
+    resultados_ativos = processar_exercicio(pontos_completos, config_atual, filtros_memoria)
+    
+    eh_fora = (
+        len(resultados_ativos) == 0 or
+        any(res.get("fora_enquadramento", False) for res in resultados_ativos)
+    )
+
+    if eh_fora:
+        cv2.putText(frame, "FORA DE ENQUADRAMENTO", (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2, cv2.LINE_AA)
+        if id_atual in ("8", "22", "29") or config_atual.get("tipo") == "isometrico":
+            segundos_atuais = filtros_memoria['isometrico']['total'].segundos
+            cv2.putText(frame, f"Tempo: {segundos_atuais}s  |  Fase: pausado", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
         else:
-            feedback_final = ""
-            cor_final = (255, 255, 255)
-            alerta_assimetria = False
-            reps_final, fase_final = 0, "base"
+            reps_atuais = filtros_memoria['repeticoes']['total'].reps
+            cv2.putText(frame, f"Reps: {reps_atuais}  |  Fase: pausado", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+    else:
+        feedback_final = ""
+        cor_final = (255, 255, 255)
+        alerta_assimetria = False
+        reps_final, fase_final = 0, "base"
+        
+        for res in resultados_ativos:
+            px, py = int(res["ponto_texto"][0]), int(res["ponto_texto"][1])
+            cor = res["cor"]
+            cv2.putText(frame, f"{res['porc']}%", (px + 20, py), cv2.FONT_HERSHEY_DUPLEX, 1.2, cor, 2)
             
-            for res in resultados_ativos:
-                px, py = int(res["ponto_texto"][0]), int(res["ponto_texto"][1])
-                cor = res["cor"]
-                cv2.putText(frame, f"{res['porc']}%", (px + 20, py), cv2.FONT_HERSHEY_DUPLEX, 1.2, cor, 2)
-                
-                # 1. Desenha a Perna/Movimento Principal (Azul/Verde)
+            # 1. Desenha a Perna/Movimento Principal (Azul/Verde)
+            if res.get("coords"):
                 pt1 = (int(res["coords"][0][0]), int(res["coords"][0][1]))
                 pt2 = (int(res["coords"][1][0]), int(res["coords"][1][1]))
                 pt3 = (int(res["coords"][2][0]), int(res["coords"][2][1]))
@@ -165,45 +177,46 @@ while camera.isOpened():
                 cv2.circle(frame, pt1, 6, (0, 0, 255), -1)
                 cv2.circle(frame, pt2, 6, (0, 0, 255), -1)
                 cv2.circle(frame, pt3, 6, (0, 0, 255), -1)
+            
+            # 2. Desenha o Tronco/Postura (Amarelo)
+            if res.get("coords_postura"):
+                cp1 = (int(res["coords_postura"][0][0]), int(res["coords_postura"][0][1]))
+                cp2 = (int(res["coords_postura"][1][0]), int(res["coords_postura"][1][1]))
+                cv2.line(frame, cp1, cp2, (0, 255, 255), 3) 
+                cv2.circle(frame, cp1, 6, (0, 255, 255), -1)
                 
-                # 2. Desenha o Tronco/Postura (Amarelo)
-                if res.get("coords_postura"):
-                    cp1 = (int(res["coords_postura"][0][0]), int(res["coords_postura"][0][1]))
-                    cp2 = (int(res["coords_postura"][1][0]), int(res["coords_postura"][1][1]))
-                    cv2.line(frame, cp1, cp2, (0, 255, 255), 3) 
-                    cv2.circle(frame, cp1, 6, (0, 255, 255), -1)
-                    
-                # 3. Desenha os Braços/Cotovelos (Roxo/Magenta)
-                if res.get("coords_bracos"):
-                    bp1 = (int(res["coords_bracos"][0][0]), int(res["coords_bracos"][0][1]))
-                    bp2 = (int(res["coords_bracos"][1][0]), int(res["coords_bracos"][1][1]))
+            # 3. Desenha os Braços/Cotovelos (Roxo/Magenta)
+            if res.get("coords_bracos"):
+                bp1 = (int(res["coords_bracos"][0][0]), int(res["coords_bracos"][0][1]))
+                bp2 = (int(res["coords_bracos"][1][0]), int(res["coords_bracos"][1][1]))
+                if len(res["coords_bracos"]) > 2:
                     bp3 = (int(res["coords_bracos"][2][0]), int(res["coords_bracos"][2][1]))
                     cv2.line(frame, bp1, bp2, (255, 0, 255), 3)
                     cv2.line(frame, bp2, bp3, (255, 0, 255), 3)
                     cv2.circle(frame, bp2, 6, (255, 0, 255), -1)
-                
-                feedback_final = res["feedback"]
-                cor_final = res["cor"]
-                alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
-                reps_final, fase_final = res.get("reps", 0), res.get("fase", "base")
+                else:
+                    cv2.line(frame, bp1, bp2, (255, 0, 255), 3)
             
-            if id_atual in ("8", "22") or config_atual.get("tipo") == "isometrico":
-                segundos_atuais = filtros_memoria['isometrico']['total'].segundos
-                cv2.putText(frame, f"Tempo: {segundos_atuais}s  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-            else:
-                cv2.putText(frame, f"Reps: {reps_final}  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.putText(frame, feedback_final, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
-            
-            # Alerta de assimetria entre os braços (vermelho, dimensionado para caber no frame)
-            if alerta_assimetria:
-                texto_alerta = "ALERTA: ASSIMETRIA"
-                escala_alerta, espessura_alerta = 0.8, 2
-                (larg_txt, alt_txt), _ = cv2.getTextSize(texto_alerta, cv2.FONT_HERSHEY_DUPLEX, escala_alerta, espessura_alerta)
-                ax = max(10, min(30, largura_atual - larg_txt - 10))
-                ay = 135
-                cv2.putText(frame, texto_alerta, (ax, ay), cv2.FONT_HERSHEY_DUPLEX, escala_alerta, (0, 0, 255), espessura_alerta, cv2.LINE_AA)
-    else:
-        cv2.putText(frame, "Ajuste sua posicao (corpo nao encontrado)", (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            feedback_final = res["feedback"]
+            cor_final = res["cor"]
+            alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
+            reps_final, fase_final = res.get("reps", 0), res.get("fase", "base")
+        
+        if id_atual in ("8", "22", "29") or config_atual.get("tipo") == "isometrico":
+            segundos_atuais = filtros_memoria['isometrico']['total'].segundos
+            cv2.putText(frame, f"Tempo: {segundos_atuais}s  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(frame, f"Reps: {reps_final}  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, feedback_final, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_final, 2, cv2.LINE_AA)
+        
+        # Alerta de assimetria entre os braços (vermelho, dimensionado para caber no frame)
+        if alerta_assimetria:
+            texto_alerta = "ALERTA: ASSIMETRIA"
+            escala_alerta, espessura_alerta = 0.8, 2
+            (larg_txt, alt_txt), _ = cv2.getTextSize(texto_alerta, cv2.FONT_HERSHEY_DUPLEX, escala_alerta, espessura_alerta)
+            ax = max(10, min(30, largura_atual - larg_txt - 10))
+            ay = 135
+            cv2.putText(frame, texto_alerta, (ax, ay), cv2.FONT_HERSHEY_DUPLEX, escala_alerta, (0, 0, 255), espessura_alerta, cv2.LINE_AA)
 
     # --- NOVO: INTERFACE RESPONSIVA ---
     # A barra preta agora vai da coordenada 0 até a 'largura_atual' da janela
@@ -212,19 +225,21 @@ while camera.isOpened():
     
     # O botão de SAIR usa a largura total para ficar ancorado sempre no canto direito
     cv2.rectangle(frame, (largura_atual - 140, 10), (largura_atual - 20, 35), (0, 0, 255), -1)
-    cv2.putText(frame, "SAIR [Q]", (largura_atual - 125, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    cv2.putText(frame, "SAIR [ESC]", (largura_atual - 130, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-    # Menu de atalhos no rodapé: suporte a 24 exercícios
+    # Menu de atalhos no rodapé: suporte a 30 exercícios
     cv2.rectangle(frame, (0, altura_atual - 30), (largura_atual, altura_atual), (0, 0, 0), -1)
     atalhos_exibicao = {
         '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
         '7': '7', '8': '8', '9': '9', '10': '0', '11': '-', '12': '=',
         '13': 'd', '14': 'e', '15': 'f', '16': 'g',
         '17': 'h', '18': 'i', '19': 'j', '20': 'k',
-        '21': 'l', '22': 'm', '23': 'n', '24': 'o'
+        '21': 'l', '22': 'm', '23': 'n', '24': 'o',
+        '25': 'p', '26': 'q', '27': 'r', '28': 's',
+        '29': 't', '30': 'u'
     }
     texto_menu = " ".join(f"[{atalhos_exibicao.get(k, k)}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
-    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.24, (255, 255, 255), 1, cv2.LINE_AA)
     # -----------------------------------
 
     cv2.imshow(nome_janela, frame)
@@ -253,9 +268,15 @@ while camera.isOpened():
         'm': '22', 'M': '22',
         'n': '23', 'N': '23',
         'o': '24', 'O': '24',
+        'p': '25', 'P': '25',
+        'q': '26', 'Q': '26',
+        'r': '27', 'R': '27',
+        's': '28', 'S': '28',
+        't': '29', 'T': '29',
+        'u': '30', 'U': '30',
     }
     
-    if tecla == ord('q') or tecla == ord('Q'):
+    if tecla == 27 or tecla == ord('x') or tecla == ord('X'):
         guardar_treino_atual()
         break
     elif letra_pressionada in MAPA_ATALHOS:

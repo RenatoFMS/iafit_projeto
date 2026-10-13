@@ -34,6 +34,13 @@ from core.analise_biomecanica import (
     validar_postura_panturrilha,
     validar_postura_bulgaro,
     validar_postura_encolhimento,
+    validar_postura_abdominal_infra,
+    validar_postura_remada_alta,
+    validar_postura_bom_dia,
+    validar_postura_triceps_coice,
+    validar_postura_agachamento_isometrico,
+    validar_polichinelo,
+    verificar_fora_enquadramento,
     calcular_calorias,
 )
 
@@ -65,11 +72,44 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     """
     global ultimo_aviso
 
+    # Deteção de Saída de Enquadramento
+    if verificar_fora_enquadramento(keypoints_data, config_exercicio):
+        eh_isometrico = config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", "")
+        if eh_isometrico:
+            cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+            if cronometro:
+                cronometro.ultimo_tempo = None
+        _executar_aviso_voz("Atenção, volte para a câmara")
+        contador = filtros.get('repeticoes', {}).get('total') if filtros else None
+        cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+        return [{
+            "fora_enquadramento": True,
+            "feedback": "FORA DE ENQUADRAMENTO",
+            "cor": (0, 0, 255),
+            "porc": 0,
+            "coords": None,
+            "coords_postura": None,
+            "coords_bracos": None,
+            "ponto_texto": (30, 90),
+            "alerta_assimetria": False,
+            "angulo_braco_esq": None,
+            "angulo_braco_dir": None,
+            "reps": contador.reps if contador else 0,
+            "segundos": cronometro.segundos if cronometro else 0,
+            "fase": "fora"
+        }]
+
     # Desvio para exercícios isométricos baseados em tempo
     if config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", ""):
         if "Lateral" in config_exercicio.get("nome", ""):
             return processar_prancha_lateral(keypoints_data, filtros)
+        elif "Agachamento" in config_exercicio.get("nome", ""):
+            return processar_agachamento_isometrico(keypoints_data, filtros)
         return processar_prancha(keypoints_data, filtros)
+
+    # Desvio para exercício com lógica mista (Polichinelo)
+    if "Polichinelo" in config_exercicio.get("nome", ""):
+        return processar_polichinelo(keypoints_data, filtros)
 
     # 1. Seleção do melhor lado da câmera
     melhor_lado, indices = selecionar_melhor_lado(keypoints_data, config_exercicio["lados"])
@@ -184,6 +224,19 @@ def processar_prancha(landmarks, filtros, largura=None, altura=None):
     """Prancha Isométrica (ângulo Ombro-Quadril-Tornozelo >= 160°)."""
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("8", {})
+
+    if verificar_fora_enquadramento(keypoints_data, config):
+        cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+        if cronometro:
+            cronometro.ultimo_tempo = None
+        _executar_aviso_voz("Atenção, volte para a câmara")
+        segundos = cronometro.segundos if cronometro else 0
+        return [{
+            "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
+            "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
+            "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+        }]
 
     validacao = validar_postura_prancha(keypoints_data, filtros)
     if not validacao:
@@ -381,6 +434,19 @@ def processar_prancha_lateral(landmarks, filtros, largura=None, altura=None):
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("22", {})
 
+    if verificar_fora_enquadramento(keypoints_data, config):
+        cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+        if cronometro:
+            cronometro.ultimo_tempo = None
+        _executar_aviso_voz("Atenção, volte para a câmara")
+        segundos = cronometro.segundos if cronometro else 0
+        return [{
+            "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
+            "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
+            "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+        }]
+
     validacao = validar_postura_prancha_lateral(keypoints_data, filtros)
     if not validacao:
         return []
@@ -450,4 +516,172 @@ PROCESSADORES_EXERCICIO.update({
     "22": processar_prancha_lateral,
     "23": processar_agachamento_bulgaro,
     "24": processar_encolhimento,
+})
+
+
+def processar_abdominal_infra(landmarks, filtros, largura=None, altura=None):
+    """Abdominal Infra (165° -> 85°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["25"], filtros)
+
+
+def processar_remada_alta(landmarks, filtros, largura=None, altura=None):
+    """Remada Alta (25° -> 95°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["26"], filtros)
+
+
+def processar_bom_dia(landmarks, filtros, largura=None, altura=None):
+    """Bom Dia (170° -> 95°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["27"], filtros)
+
+
+def processar_triceps_coice(landmarks, filtros, largura=None, altura=None):
+    """Tríceps Coice (90° -> 165°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["28"], filtros)
+
+
+def processar_agachamento_isometrico(landmarks, filtros, largura=None, altura=None):
+    """Agachamento Isométrico (Wall Sit) com ângulo mantido a ~90°."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    config = EXERCICIOS.get("29", {})
+
+    if verificar_fora_enquadramento(keypoints_data, config):
+        cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+        if cronometro:
+            cronometro.ultimo_tempo = None
+        _executar_aviso_voz("Atenção, volte para a câmara")
+        segundos = cronometro.segundos if cronometro else 0
+        return [{
+            "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
+            "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
+            "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+        }]
+
+    validacao = validar_postura_agachamento_isometrico(keypoints_data, filtros)
+    if not validacao:
+        return []
+
+    postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao = validacao
+
+    if postura_correta:
+        feedback = config.get("msg_fim", "Posicao isometrica correta!")
+        cor = (0, 255, 0)  # Verde
+        fase = "sustentando"
+        porc = 100
+    else:
+        feedback = f"ERRO: {msg_correcao}"
+        cor = (0, 0, 255)  # Vermelho
+        fase = "corrigir"
+        porc = int(max(0, min(100, 100 - abs(angulo_suave - 90))))
+        _executar_aviso_voz(msg_correcao)
+
+    cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+    if cronometro:
+        cronometro.atualizar(postura_correta=postura_correta)
+        segundos = cronometro.segundos
+    else:
+        segundos = 0
+
+    return [{
+        "lado": melhor_lado,
+        "porc": porc,
+        "feedback": feedback,
+        "cor": cor,
+        "coords": (p1, p2, p3),
+        "coords_postura": (p1, p2),
+        "coords_bracos": None,
+        "ponto_texto": p2,
+        "alerta_assimetria": False,
+        "angulo_braco_esq": None,
+        "angulo_braco_dir": None,
+        "reps": segundos,
+        "segundos": segundos,
+        "postura_correta": postura_correta,
+        "fase": fase
+    }]
+
+
+def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
+    """Polichinelo (lógica mista: braços no eixo Y e pernas na distância dos pés)."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    config = EXERCICIOS.get("30", {})
+
+    if verificar_fora_enquadramento(keypoints_data, config):
+        _executar_aviso_voz("Atenção, volte para a câmara")
+        contador = filtros.get('repeticoes', {}).get('total') if filtros else None
+        return [{
+            "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
+            "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
+            "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
+            "reps": contador.reps if contador else 0, "segundos": 0, "fase": "fora"
+        }]
+
+    res_poli = validar_polichinelo(keypoints_data, filtros)
+    if not res_poli:
+        return []
+
+    porc, postura_segura, coords_bracos, coords_pernas, msg_erro = res_poli
+
+    contador = filtros.get('repeticoes', {}).get('total')
+    reps, fase = contador.atualizar(porc) if contador else (0, "base")
+
+    if not postura_segura:
+        feedback = f"ERRO: {msg_erro}"
+        cor = (0, 0, 255)
+        _executar_aviso_voz(msg_erro)
+    else:
+        if porc >= 80:
+            feedback = config.get("msg_fim", "Boa abertura! Feche.")
+            cor = (0, 255, 0)
+        elif porc <= 20:
+            feedback = config.get("msg_inicio", "Abra bracos e pernas.")
+            cor = (0, 255, 255)
+        else:
+            feedback = "Em movimento..."
+            cor = (255, 0, 0)
+
+    p_ombro_esq = keypoints_data[5][:2]
+    p_ombro_dir = keypoints_data[6][:2]
+    ponto_texto = ((p_ombro_esq[0] + p_ombro_dir[0]) / 2, p_ombro_esq[1] - 30)
+
+    p1 = keypoints_data[5][:2]
+    p2 = keypoints_data[7][:2]
+    p3 = keypoints_data[9][:2]
+
+    return [{
+        "lado": "esq",
+        "porc": porc,
+        "feedback": feedback,
+        "cor": cor,
+        "coords": (p1, p2, p3),
+        "coords_postura": coords_pernas,
+        "coords_bracos": (keypoints_data[5][:2], keypoints_data[7][:2], keypoints_data[9][:2]),
+        "ponto_texto": ponto_texto,
+        "alerta_assimetria": False,
+        "angulo_braco_esq": None,
+        "angulo_braco_dir": None,
+        "reps": reps,
+        "fase": fase
+    }]
+
+
+PROCESSADORES_EXERCICIO.update({
+    "25": processar_abdominal_infra,
+    "26": processar_remada_alta,
+    "27": processar_bom_dia,
+    "28": processar_triceps_coice,
+    "29": processar_agachamento_isometrico,
+    "30": processar_polichinelo,
 })

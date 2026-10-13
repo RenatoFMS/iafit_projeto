@@ -362,5 +362,101 @@ EXERCICIOS = {
         "msg_inicio": "Encolha os ombros para cima.",
         "msg_erro": "ERRO: Nao incline o tronco!",
         "msg_voz": "Mantenha o tronco reto"
+    },
+    "25": {
+        "nome": "Abdominal Infra",
+        "met": 3.0,
+        "lados": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Ombro, Quadril, Tornozelo (pernas sobem)
+        "postura": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Joelhos estendidos
+        "postura_vertical": False,
+        "limite_postura": 130,
+        "regra_postura": "<",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 165, "fim": 85, # Pernas no chão (165°) -> pernas elevadas (85°)
+        "ignorar_assimetria": True,
+        "msg_fim": "Boa elevacao! Desca devagar.",
+        "msg_inicio": "Eleve as pernas.",
+        "msg_erro": "ERRO: Mantenha as pernas estendidas!",
+        "msg_voz": "Estenda as pernas"
+    },
+    "26": {
+        "nome": "Remada Alta",
+        "met": 3.0,
+        "lados": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Quadril, Ombro, Cotovelo (cotovelos sobem acima dos ombros)
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Tronco ereto
+        "postura_vertical": True,
+        "limite_postura": 25,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 25, "fim": 95, # Cotovelos baixos (25°) -> cotovelos na altura dos ombros (95°)
+        "ignorar_assimetria": False,
+        "msg_fim": "Cotovelos no topo! Desca.",
+        "msg_inicio": "Puxe os cotovelos para cima.",
+        "msg_erro": "ERRO: Mantenha o tronco reto!",
+        "msg_voz": "Mantenha o tronco reto"
+    },
+    "27": {
+        "nome": "Bom Dia",
+        "met": 3.5,
+        "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Ombro, Quadril, Joelho (pernas retas, tronco inclina)
+        "postura": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Joelhos retos (>= 150°)
+        "postura_vertical": False,
+        "limite_postura": 150,
+        "regra_postura": "<",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 170, "fim": 95, # Em pé (170°) -> inclinação à frente (95°)
+        "ignorar_assimetria": True,
+        "msg_fim": "Boa inclinacao! Suba.",
+        "msg_inicio": "Incline o tronco a frente.",
+        "msg_erro": "ERRO: Nao dobre os joelhos!",
+        "msg_voz": "Nao dobre os joelhos"
+    },
+    "28": {
+        "nome": "Triceps Coice",
+        "met": 3.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso (cotovelo fixo atrás, braço estica)
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Cotovelo alto (Quadril-Ombro-Cotovelo >= 25°)
+        "postura_vertical": False,
+        "limite_postura": 25,
+        "regra_postura": "<",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 90, "fim": 165, # Cotovelo flexionado a 90° -> braço estendido a 165°
+        "ignorar_assimetria": False,
+        "msg_fim": "Extensao total! Retorne.",
+        "msg_inicio": "Estenda o antebraco para tras.",
+        "msg_erro": "ERRO: Mantenha o cotovelo alto!",
+        "msg_voz": "Mantenha o cotovelo alto"
+    },
+    "29": {
+        "nome": "Agachamento Isometrico",
+        "tipo": "isometrico",
+        "met": 4.5,
+        "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Quadril, Joelho, Tornozelo mantido a ~90°
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Tronco ereto
+        "postura_vertical": True,
+        "limite_postura": 35,
+        "regra_postura": ">",
+        "inicio": 90, "fim": 90,
+        "ignorar_assimetria": True,
+        "msg_fim": "Posicao isometrica correta!",
+        "msg_inicio": "Mantenha o quadril a 90 graus.",
+        "msg_erro": "ERRO: Ajuste a altura para 90 graus!",
+        "msg_voz": "Ajuste o quadril a 90 graus"
+    },
+    "30": {
+        "nome": "Polichinelo",
+        "met": 6.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Braços e pernas
+        "postura": {"esq": (5, 11), "dir": (6, 12)},
+        "postura_vertical": True,
+        "limite_postura": 25,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 0, "fim": 100, # Lógica mista combinada
+        "ignorar_assimetria": True,
+        "msg_fim": "Boa abertura! Feche.",
+        "msg_inicio": "Abra bracos e pernas.",
+        "msg_erro": "ERRO: Sincronize bracos e pernas!",
+        "msg_voz": "Sincronize bracos e pernas"
     }
 }
