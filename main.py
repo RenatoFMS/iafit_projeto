@@ -1,7 +1,7 @@
 import cv2
 from ultralytics import YOLO
 from core.config_exercicios import EXERCICIOS
-from core.motor_ia import processar_exercicio
+from core.motor_ia import processar_exercicio, resetar_cooldown_voz
 from core.math_utils import FiltroSuavizacao, ContadorRepeticoes
 from core.firebase_client import salvar_treino
 
@@ -24,6 +24,7 @@ def resetar_filtros():
     for cat in filtros_memoria.values():
         for filtro in cat.values():
             filtro.limpar()
+    resetar_cooldown_voz()
 
 def guardar_treino_atual():
     """Envia o exercício atual e as suas repetições para a nuvem (só se reps > 0)."""

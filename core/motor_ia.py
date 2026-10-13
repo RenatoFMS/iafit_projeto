@@ -1,6 +1,11 @@
 import math
+import time
 from core.math_utils import calcular_angulo, calcular_porcentagem
 from core.config_exercicios import EXERCICIOS
+from core.voz_client import falar
+
+# Variável global para gerir o cooldown dos avisos de voz de postura (4 segundos)
+ultimo_aviso = 0
 
 # Índices COCO (YOLOv8-pose) dos braços, usados no filtro de assimetria
 BRACO_ESQ = (5, 7, 9)   # Ombro, Cotovelo, Pulso esquerdos
@@ -55,27 +60,35 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     coords_postura = None
     coords_bracos = None
     
-    # 3. Análise de Segurança da Lombar (Referência Vertical)
+    # 3. Análise de Segurança da Postura
     if config_exercicio.get("postura"):
         s1_idx, s2_idx = config_exercicio["postura"][melhor_lado][:2]
         if keypoints_data[s1_idx][2] > 0.5 and keypoints_data[s2_idx][2] > 0.5:
-            sp1 = keypoints_data[s1_idx][:2] # Ombro
-            sp2 = keypoints_data[s2_idx][:2] # Quadril
+            sp1 = keypoints_data[s1_idx][:2]
+            sp2 = keypoints_data[s2_idx][:2]
             coords_postura = (sp1, sp2) 
             
-            # Cria a linha de gravidade imaginária puxando 50 pixels para cima do quadril
+            ponto3_valido = True
+            # Cria a linha de gravidade imaginária puxando 50 pixels para cima do ponto de apoio
             if config_exercicio.get("postura_vertical"):
                 sp3 = (sp2[0], sp2[1] - 50)
             else:
                 s3_idx = config_exercicio["postura"][melhor_lado][2]
-                sp3 = keypoints_data[s3_idx][:2]
+                if keypoints_data[s3_idx][2] > 0.5:
+                    sp3 = keypoints_data[s3_idx][:2]
+                else:
+                    ponto3_valido = False
                 
-            angulo_seg = calcular_angulo(sp1, sp2, sp3)
-            angulo_seg_suave = filtros['postura'][melhor_lado].atualizar(angulo_seg)
-            
-            limite = config_exercicio["limite_postura"]
-            if config_exercicio["regra_postura"] == "<" and angulo_seg_suave < limite: postura_segura = False
-            elif config_exercicio["regra_postura"] == ">" and angulo_seg_suave > limite: postura_segura = False
+            if ponto3_valido:
+                angulo_seg = calcular_angulo(sp1, sp2, sp3)
+                filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+                angulo_seg_suave = filtro_post.atualizar(angulo_seg) if filtro_post else angulo_seg
+                
+                limite = config_exercicio["limite_postura"]
+                if config_exercicio["regra_postura"] == "<" and angulo_seg_suave < limite:
+                    postura_segura = False
+                elif config_exercicio["regra_postura"] == ">" and angulo_seg_suave > limite:
+                    postura_segura = False
 
     # 4. Mapeamento Extra (Braços/Cotovelos)
     if config_exercicio.get("bracos"):
@@ -93,10 +106,19 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     else:
         angulo_esq, angulo_dir, alerta_assimetria = calcular_assimetria(keypoints_data)
 
-    # 6. Definição do Alerta
+    # 6. Definição do Alerta e Feedback de Voz (Cooldown 4s)
+    global ultimo_aviso
     if not postura_segura:
-        feedback = config_exercicio["msg_erro"]
+        feedback = config_exercicio.get("msg_erro", "ERRO: Corrija a postura!")
         cor = (0, 0, 255) # Vermelho
+
+        agora = time.time()
+        if agora - ultimo_aviso > 4:
+            msg_voz = config_exercicio.get("msg_voz")
+            if not msg_voz:
+                msg_voz = feedback.replace("ERRO: ", "").replace("!", "").strip()
+            falar(msg_voz)
+            ultimo_aviso = agora
     else:
         if porc == 100:
             feedback = config_exercicio["msg_fim"]
@@ -165,9 +187,24 @@ def processar_abdominal(landmarks, filtros):
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["5"], filtros)
 
+def processar_agachamento(landmarks, filtros):
+    """Agachamento (170° -> 80°) com MediaPipe.
+
+    Avalia a amplitude do joelho, segurança da coluna lombar e alinhamento,
+    devolvendo a mesma lista de resultados que processar_exercicio.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["2"], filtros)
+
+def resetar_cooldown_voz():
+    """Reinicia o cooldown dos alertas de voz de postura."""
+    global ultimo_aviso
+    ultimo_aviso = 0
+
 # Exercícios com função dedicada (id da config_exercicios -> função de processamento)
 PROCESSADORES_EXERCICIO = {
     "1": processar_rosca_biceps,
+    "2": processar_agachamento,
     "3": processar_flexao,
     "4": processar_desenvolvimento_ombro,
     "5": processar_abdominal,
