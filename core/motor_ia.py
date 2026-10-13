@@ -26,6 +26,14 @@ from core.analise_biomecanica import (
     validar_postura_elevacao_pelvica,
     validar_postura_sumo,
     validar_barra_fixa,
+    validar_postura_prancha_lateral,
+    validar_postura_elevacao_frontal,
+    validar_postura_triceps_testa,
+    validar_postura_crucifixo,
+    validar_postura_stiff_unilateral,
+    validar_postura_panturrilha,
+    validar_postura_bulgaro,
+    validar_postura_encolhimento,
     calcular_calorias,
 )
 
@@ -59,6 +67,8 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
 
     # Desvio para exercícios isométricos baseados em tempo
     if config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", ""):
+        if "Lateral" in config_exercicio.get("nome", ""):
+            return processar_prancha_lateral(keypoints_data, filtros)
         return processar_prancha(keypoints_data, filtros)
 
     # 1. Seleção do melhor lado da câmera
@@ -322,3 +332,122 @@ PROCESSADORES_EXERCICIO = {
     "15": processar_agachamento_sumo,
     "16": processar_barra_fixa,
 }
+
+
+def processar_triceps_testa(landmarks, filtros, largura=None, altura=None):
+    """Tríceps Testa (160° -> 70°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["17"], filtros)
+
+
+def processar_crucifixo(landmarks, filtros, largura=None, altura=None):
+    """Crucifixo Halteres (150° -> 85°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["18"], filtros)
+
+
+def processar_stiff_unilateral(landmarks, filtros, largura=None, altura=None):
+    """Stiff Unilateral (170° -> 85°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["19"], filtros)
+
+
+def processar_elevacao_frontal(landmarks, filtros, largura=None, altura=None):
+    """Elevação Frontal (20° -> 90°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["20"], filtros)
+
+
+def processar_panturrilha(landmarks, filtros, largura=None, altura=None):
+    """Panturrilha em Pé (90° -> 140°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["21"], filtros)
+
+
+def processar_prancha_lateral(landmarks, filtros, largura=None, altura=None):
+    """Prancha Lateral (ângulo Ombro-Quadril-Tornozelo >= 160°)."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    config = EXERCICIOS.get("22", {})
+
+    validacao = validar_postura_prancha_lateral(keypoints_data, filtros)
+    if not validacao:
+        return []
+
+    postura_correta, angulo_suave, melhor_lado, (p1, p2, p3) = validacao
+
+    if postura_correta:
+        feedback = config.get("msg_fim", "Postura lateral correta!")
+        cor = (0, 255, 0)  # Verde
+        fase = "sustentando"
+        porc = 100
+    else:
+        feedback = config.get("msg_erro", "ERRO: Suba o quadril lateral!")
+        cor = (0, 0, 255)  # Vermelho
+        fase = "corrigir"
+        porc = int(max(0, min(100, (angulo_suave / 160.0) * 100)))
+        _executar_aviso_voz(config.get("msg_voz", "Suba o quadril"))
+
+    cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+    if cronometro:
+        cronometro.atualizar(postura_correta=postura_correta)
+        segundos = cronometro.segundos
+    else:
+        segundos = 0
+
+    return [{
+        "lado": melhor_lado,
+        "porc": porc,
+        "feedback": feedback,
+        "cor": cor,
+        "coords": (p1, p2, p3),
+        "coords_postura": (p1, p2),
+        "coords_bracos": None,
+        "ponto_texto": p2,
+        "alerta_assimetria": False,
+        "angulo_braco_esq": None,
+        "angulo_braco_dir": None,
+        "reps": segundos,
+        "segundos": segundos,
+        "postura_correta": postura_correta,
+        "fase": fase
+    }]
+
+
+def processar_agachamento_bulgaro(landmarks, filtros, largura=None, altura=None):
+    """Agachamento Búlgaro (170° -> 90°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["23"], filtros)
+
+
+def processar_encolhimento(landmarks, filtros, largura=None, altura=None):
+    """Encolhimento de Ombros (170° -> 135°) com MediaPipe e foco no eixo Y."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["24"], filtros)
+
+
+PROCESSADORES_EXERCICIO.update({
+    "17": processar_triceps_testa,
+    "18": processar_crucifixo,
+    "19": processar_stiff_unilateral,
+    "20": processar_elevacao_frontal,
+    "21": processar_panturrilha,
+    "22": processar_prancha_lateral,
+    "23": processar_agachamento_bulgaro,
+    "24": processar_encolhimento,
+})

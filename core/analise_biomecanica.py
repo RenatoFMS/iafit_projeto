@@ -141,6 +141,20 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
         return validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros)
     elif "Sumo" in nome or "Sumô" in nome:
         return validar_postura_sumo(keypoints_data, melhor_lado, filtros)
+    elif "Elevacao Frontal" in nome:
+        return validar_postura_elevacao_frontal(keypoints_data, melhor_lado, filtros)
+    elif "Triceps Testa" in nome:
+        return validar_postura_triceps_testa(keypoints_data, melhor_lado, filtros)
+    elif "Crucifixo" in nome:
+        return validar_postura_crucifixo(keypoints_data, melhor_lado, filtros)
+    elif "Stiff Unilateral" in nome:
+        return validar_postura_stiff_unilateral(keypoints_data, melhor_lado, filtros)
+    elif "Panturrilha" in nome:
+        return validar_postura_panturrilha(keypoints_data, melhor_lado, filtros)
+    elif "Bulgaro" in nome or "Búlgaro" in nome:
+        return validar_postura_bulgaro(keypoints_data, melhor_lado, filtros)
+    elif "Encolhimento" in nome:
+        return validar_postura_encolhimento(keypoints_data, melhor_lado, filtros)
 
     if not config_exercicio.get("postura"):
         return postura_segura, coords_postura, angulo_seg_suave
@@ -446,6 +460,206 @@ def validar_barra_fixa(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
     queixo_acima = p_nariz[1] <= y_barra
     diferenca_y = y_barra - p_nariz[1]
     return queixo_acima, coords_visual, diferenca_y
+
+
+def validar_postura_prancha_lateral(landmarks_ou_keypoints, filtros=None):
+    """Valida a postura da Prancha Lateral baseando-se no ângulo Ombro-Quadril-Tornozelo.
+
+    Regra da Prancha Lateral:
+    - Se o ângulo for >= 160°, postura correta (True).
+    - Se o ângulo for < 160°, postura incorreta (False, quadril caiu lateralmente).
+    Retorna (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)) ou None se visibilidade insuficiente.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
+    lados_prancha = {"esq": (5, 11, 15), "dir": (6, 12, 16)}
+    melhor_lado, indices = selecionar_melhor_lado(keypoints_data, lados_prancha)
+    if not melhor_lado:
+        return None
+
+    p1 = keypoints_data[indices[0]][:2]  # Ombro
+    p2 = keypoints_data[indices[1]][:2]  # Quadril
+    p3 = keypoints_data[indices[2]][:2]  # Tornozelo
+
+    angulo_bruto = calcular_angulo(p1, p2, p3)
+    filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_amp.atualizar(angulo_bruto) if filtro_amp else angulo_bruto
+
+    postura_correta = angulo_suave >= 160.0
+    return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)
+
+
+def validar_postura_elevacao_frontal(keypoints_data, melhor_lado, filtros=None):
+    """Valida a estabilidade do tronco na Elevação Frontal (Ombro-Quadril-Tornozelo).
+
+    Garante que o tronco não balance para trás (< 165°).
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    o_idx = 5 if melhor_lado == "esq" else 6
+    q_idx = 11 if melhor_lado == "esq" else 12
+    t_idx = 15 if melhor_lado == "esq" else 16
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, q_idx, t_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[o_idx][:2]
+    sp2 = keypoints_data[q_idx][:2]
+    sp3 = keypoints_data[t_idx][:2]
+    coords_postura = (sp1, sp2)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave >= 165.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_triceps_testa(keypoints_data, melhor_lado, filtros=None):
+    """Valida o alinhamento dos braços no Tríceps Testa (Quadril-Ombro-Cotovelo).
+
+    Garante que os cotovelos permaneçam travados e alinhados (ângulo <= 110°).
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12
+    o_idx = 5 if melhor_lado == "esq" else 6
+    c_idx = 7 if melhor_lado == "esq" else 8
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[q_idx][:2]
+    sp2 = keypoints_data[o_idx][:2]
+    sp3 = keypoints_data[c_idx][:2]
+    coords_postura = (sp2, sp3)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 110.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_crucifixo(keypoints_data, melhor_lado, filtros=None):
+    """Valida que os cotovelos não hiperestendam no Crucifixo (Ombro-Cotovelo-Pulso <= 165°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    o_idx = 5 if melhor_lado == "esq" else 6
+    c_idx = 7 if melhor_lado == "esq" else 8
+    p_idx = 9 if melhor_lado == "esq" else 10
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, c_idx, p_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[o_idx][:2]
+    sp2 = keypoints_data[c_idx][:2]
+    sp3 = keypoints_data[p_idx][:2]
+    coords_postura = (sp1, sp2)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 165.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_stiff_unilateral(keypoints_data, melhor_lado, filtros=None):
+    """Valida a inclinação lombar no Stiff Unilateral (Ombro-Quadril vs vertical <= 75°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    s1_idx = 5 if melhor_lado == "esq" else 6
+    s2_idx = 11 if melhor_lado == "esq" else 12
+
+    if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
+        return True, None, None
+
+    sp1 = keypoints_data[s1_idx][:2]
+    sp2 = keypoints_data[s2_idx][:2]
+    coords_postura = (sp1, sp2)
+    sp3 = (sp2[0], sp2[1] - 50)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 75.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_panturrilha(keypoints_data, melhor_lado, filtros=None):
+    """Valida a extensão dos joelhos na Panturrilha em Pé (Quadril-Joelho-Tornozelo >= 160°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12
+    j_idx = 13 if melhor_lado == "esq" else 14
+    t_idx = 15 if melhor_lado == "esq" else 16
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
+        return True, None, None
+
+    sp1 = keypoints_data[q_idx][:2]
+    sp2 = keypoints_data[j_idx][:2]
+    sp3 = keypoints_data[t_idx][:2]
+    coords_postura = (sp1, sp2)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave >= 160.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_bulgaro(keypoints_data, melhor_lado, filtros=None):
+    """Valida a inclinação do tronco no Agachamento Búlgaro (Ombro-Quadril vs vertical <= 45°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    s1_idx = 5 if melhor_lado == "esq" else 6
+    s2_idx = 11 if melhor_lado == "esq" else 12
+
+    if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
+        return True, None, None
+
+    sp1 = keypoints_data[s1_idx][:2]
+    sp2 = keypoints_data[s2_idx][:2]
+    coords_postura = (sp1, sp2)
+    sp3 = (sp2[0], sp2[1] - 50)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 45.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_encolhimento(keypoints_data, melhor_lado, filtros=None):
+    """Valida a postura ereta no Encolhimento de Ombros (Ombro-Quadril vs vertical <= 20°).
+
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    s1_idx = 5 if melhor_lado == "esq" else 6
+    s2_idx = 11 if melhor_lado == "esq" else 12
+
+    if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
+        return True, None, None
+
+    sp1 = keypoints_data[s1_idx][:2]
+    sp2 = keypoints_data[s2_idx][:2]
+    coords_postura = (sp1, sp2)
+    sp3 = (sp2[0], sp2[1] - 50)
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 20.0
+    return postura_segura, coords_postura, angulo_suave
 
 
 def calcular_calorias(tempo_segundos, met, peso_kg=70.0):

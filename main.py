@@ -44,7 +44,7 @@ def guardar_treino_atual():
     config = EXERCICIOS.get(id_atual, {})
     nome_ex = config.get("nome", "Exercício")
     met_ex = config.get("met", 3.0)
-    if id_atual == "8":
+    if id_atual in ("8", "22") or config.get("tipo") == "isometrico":
         segundos = filtros_memoria['isometrico']['total'].segundos
         if segundos > 0:
             calorias = calcular_calorias(segundos, met_ex)
@@ -80,7 +80,7 @@ while camera.isOpened():
             break
 
     # Verificação de encerramento automático da série por inatividade (Timeout > 6.0s)
-    if id_atual == "8":
+    if id_atual in ("8", "22") or EXERCICIOS.get(id_atual, {}).get("tipo") == "isometrico":
         cronometro = filtros_memoria['isometrico']['total']
         if cronometro.segundos > 0 and (time.time() - cronometro.tempo_ultima_atividade) > 6.0:
             segundos_feitos = cronometro.segundos
@@ -187,7 +187,7 @@ while camera.isOpened():
                 alerta_assimetria = alerta_assimetria or res.get("alerta_assimetria", False)
                 reps_final, fase_final = res.get("reps", 0), res.get("fase", "base")
             
-            if id_atual == "8":
+            if id_atual in ("8", "22") or config_atual.get("tipo") == "isometrico":
                 segundos_atuais = filtros_memoria['isometrico']['total'].segundos
                 cv2.putText(frame, f"Tempo: {segundos_atuais}s  |  Fase: {fase_final}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
             else:
@@ -214,15 +214,17 @@ while camera.isOpened():
     cv2.rectangle(frame, (largura_atual - 140, 10), (largura_atual - 20, 35), (0, 0, 255), -1)
     cv2.putText(frame, "SAIR [Q]", (largura_atual - 125, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-    # Menu de atalhos no rodapé: suporte a 16 exercícios
+    # Menu de atalhos no rodapé: suporte a 24 exercícios
     cv2.rectangle(frame, (0, altura_atual - 30), (largura_atual, altura_atual), (0, 0, 0), -1)
     atalhos_exibicao = {
         '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
         '7': '7', '8': '8', '9': '9', '10': '0', '11': '-', '12': '=',
-        '13': 'd', '14': 'e', '15': 'f', '16': 'g'
+        '13': 'd', '14': 'e', '15': 'f', '16': 'g',
+        '17': 'h', '18': 'i', '19': 'j', '20': 'k',
+        '21': 'l', '22': 'm', '23': 'n', '24': 'o'
     }
     texto_menu = " ".join(f"[{atalhos_exibicao.get(k, k)}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
-    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.28, (255, 255, 255), 1, cv2.LINE_AA)
     # -----------------------------------
 
     cv2.imshow(nome_janela, frame)
@@ -243,6 +245,14 @@ while camera.isOpened():
         'e': '14', 'E': '14',
         'f': '15', 'F': '15',
         'g': '16', 'G': '16',
+        'h': '17', 'H': '17',
+        'i': '18', 'I': '18',
+        'j': '19', 'J': '19',
+        'k': '20', 'K': '20',
+        'l': '21', 'L': '21',
+        'm': '22', 'M': '22',
+        'n': '23', 'N': '23',
+        'o': '24', 'O': '24',
     }
     
     if tecla == ord('q') or tecla == ord('Q'):

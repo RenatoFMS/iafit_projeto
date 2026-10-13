@@ -238,5 +238,129 @@ EXERCICIOS = {
         "msg_inicio": "Puxe o corpo para cima.",
         "msg_erro": "ERRO: Passe o queixo da barra!",
         "msg_voz": "Passe o queixo da barra"
+    },
+    "17": {
+        "nome": "Triceps Testa",
+        "met": 3.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Manter braços alinhados
+        "postura_vertical": False,
+        "limite_postura": 110,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 160, "fim": 70, # Braços estendidos (160°) -> flexão até a testa (70°)
+        "msg_fim": "Extensao total! Desca com controle.",
+        "msg_inicio": "Estique os antebracos.",
+        "msg_erro": "ERRO: Trave os cotovelos!",
+        "msg_voz": "Trave os cotovelos"
+    },
+    "18": {
+        "nome": "Crucifixo Halteres",
+        "met": 3.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Abertura do peitoral
+        "postura_vertical": False,
+        "limite_postura": 165, # Não hiperestender os cotovelos
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 150, "fim": 85, # Halteres juntos (150°) -> abertura lateral dos braços (85°)
+        "msg_fim": "Boa abertura! Feche os bracos.",
+        "msg_inicio": "Abra os bracos com controle.",
+        "msg_erro": "ERRO: Flexione levemente os cotovelos!",
+        "msg_voz": "Flexione os cotovelos"
+    },
+    "19": {
+        "nome": "Stiff Unilateral",
+        "met": 4.0,
+        "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Ombro, Quadril, Joelho (perna de apoio)
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Ombro, Quadril com a vertical
+        "postura_vertical": True,
+        "limite_postura": 75, # Não arredondar as costas na descida
+        "regra_postura": ">",
+        "inicio": 170, "fim": 85, # Em pé (170°) -> descida controlada (85°)
+        "ignorar_assimetria": True,
+        "msg_fim": "Boa descida! Suba.",
+        "msg_inicio": "Incline o tronco a frente.",
+        "msg_erro": "ERRO: Mantenha as costas retas!",
+        "msg_voz": "Endireite as costas"
+    },
+    "20": {
+        "nome": "Elevacao Frontal",
+        "met": 2.8,
+        "lados": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Quadril, Ombro, Cotovelo
+        "postura": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Ombro, Quadril, Tornozelo (evitar balanço lombar)
+        "postura_vertical": False,
+        "limite_postura": 165, # Balanço do tronco para trás
+        "regra_postura": "<",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 20, "fim": 90, # Braços baixos (20°) -> linha dos ombros (90°)
+        "ignorar_assimetria": False,
+        "msg_fim": "Boa altura! Desca devagar.",
+        "msg_inicio": "Eleve ate os ombros.",
+        "msg_erro": "ERRO: Nao balance o tronco!",
+        "msg_voz": "Nao balance o tronco"
+    },
+    "21": {
+        "nome": "Panturrilha em Pe",
+        "met": 2.5,
+        "lados": {"esq": (13, 15, 15), "dir": (14, 16, 16)}, # Joelho, Tornozelo, Pé
+        "postura": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Manter pernas estendidas
+        "postura_vertical": False,
+        "limite_postura": 160,
+        "regra_postura": "<",
+        "inicio": 90, "fim": 140, # Pé neutro (90°) -> elevação na ponta do pé (140°)
+        "ignorar_assimetria": True,
+        "msg_fim": "Contracao maxima! Desca.",
+        "msg_inicio": "Suba na ponta dos pes.",
+        "msg_erro": "ERRO: Mantenha os joelhos estendidos!",
+        "msg_voz": "Estenda as pernas"
+    },
+    "22": {
+        "nome": "Prancha Lateral",
+        "tipo": "isometrico",
+        "met": 3.5,
+        "lados": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Ombro, Quadril, Tornozelo
+        "postura": {"esq": (5, 11, 15), "dir": (6, 12, 16)}, # Alinhamento lateral
+        "postura_vertical": False,
+        "limite_postura": 160, # Se ângulo < 160°, quadril caiu
+        "regra_postura": "<",
+        "inicio": 180, "fim": 160,
+        "ignorar_assimetria": True,
+        "msg_fim": "Postura lateral correta!",
+        "msg_inicio": "Segure a posicao lateral.",
+        "msg_erro": "ERRO: Suba o quadril lateral!",
+        "msg_voz": "Suba o quadril"
+    },
+    "23": {
+        "nome": "Agachamento Bulgaro",
+        "met": 5.0,
+        "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Quadril, Joelho, Tornozelo (perna dianteira)
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Tronco ereto
+        "postura_vertical": True,
+        "limite_postura": 45,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 170, "fim": 90, # Em pé (170°) -> descida até 90° no joelho dianteiro
+        "ignorar_assimetria": True,
+        "msg_fim": "Profundidade OK! Suba.",
+        "msg_inicio": "Desca o quadril.",
+        "msg_erro": "ERRO: Tronco muito inclinado!",
+        "msg_voz": "Endireite o tronco"
+    },
+    "24": {
+        "nome": "Encolhimento Ombros",
+        "met": 2.5,
+        "lados": {"esq": (3, 5, 11), "dir": (4, 6, 12)}, # Orelha, Ombro, Quadril (elevação vertical dos ombros)
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Tronco estático
+        "postura_vertical": True,
+        "limite_postura": 20,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 170, "fim": 135, # Ombros baixos (170°) -> ombros elevados (135°)
+        "ignorar_assimetria": False,
+        "msg_fim": "Contracao maxima! Desca.",
+        "msg_inicio": "Encolha os ombros para cima.",
+        "msg_erro": "ERRO: Nao incline o tronco!",
+        "msg_voz": "Mantenha o tronco reto"
     }
 }
