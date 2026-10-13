@@ -214,10 +214,14 @@ while camera.isOpened():
     cv2.rectangle(frame, (largura_atual - 140, 10), (largura_atual - 20, 35), (0, 0, 255), -1)
     cv2.putText(frame, "SAIR [Q]", (largura_atual - 125, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-    # Menu de atalhos no rodapé: pressione o número para trocar de exercício
+    # Menu de atalhos no rodapé: suporte a 12 exercícios
     cv2.rectangle(frame, (0, altura_atual - 30), (largura_atual, altura_atual), (0, 0, 0), -1)
-    texto_menu = "  ".join(f"[{k}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
-    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+    atalhos_exibicao = {
+        '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
+        '7': '7', '8': '8', '9': '9', '10': '0', '11': '-', '12': '='
+    }
+    texto_menu = " ".join(f"[{atalhos_exibicao.get(k, k)}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
+    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
     # -----------------------------------
 
     cv2.imshow(nome_janela, frame)
@@ -227,14 +231,24 @@ while camera.isOpened():
         break
     tecla = cv2.waitKey(1) & 0xFF
     letra_pressionada = chr(tecla)
+
+    MAPA_ATALHOS = {
+        '1': '1', '2': '2', '3': '3', '4': '4', '5': '5',
+        '6': '6', '7': '7', '8': '8', '9': '9',
+        '0': '10', 'a': '10', 'A': '10',
+        '-': '11', 'b': '11', 'B': '11',
+        '=': '12', 'c': '12', 'C': '12',
+    }
     
     if tecla == ord('q') or tecla == ord('Q'):
         guardar_treino_atual()
         break
-    elif letra_pressionada in EXERCICIOS and letra_pressionada != id_atual:
-        guardar_treino_atual()  # Antes de reiniciar a contagem
-        id_atual = letra_pressionada
-        resetar_filtros()
+    elif letra_pressionada in MAPA_ATALHOS:
+        novo_id = MAPA_ATALHOS[letra_pressionada]
+        if novo_id in EXERCICIOS and novo_id != id_atual:
+            guardar_treino_atual()  # Antes de reiniciar a contagem
+            id_atual = novo_id
+            resetar_filtros()
 
 camera.release()
 pose.close()

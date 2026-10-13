@@ -20,6 +20,10 @@ from core.analise_biomecanica import (
     calcular_assimetria,
     verificar_assimetria_bracos,
     validar_postura_prancha,
+    validar_postura_remada,
+    validar_postura_supino,
+    validar_postura_elevacao_lateral,
+    validar_postura_elevacao_pelvica,
     calcular_calorias,
 )
 
@@ -213,6 +217,38 @@ def processar_prancha(landmarks, filtros, largura=None, altura=None):
     }]
 
 
+def processar_remada_curvada(landmarks, filtros, largura=None, altura=None):
+    """Remada Curvada com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["9"], filtros)
+
+
+def processar_supino(landmarks, filtros, largura=None, altura=None):
+    """Supino com Halteres com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["10"], filtros)
+
+
+def processar_elevacao_lateral(landmarks, filtros, largura=None, altura=None):
+    """Elevação Lateral (20° -> 90°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["11"], filtros)
+
+
+def processar_elevacao_pelvica(landmarks, filtros, largura=None, altura=None):
+    """Elevação Pélvica (110° -> 175°) com MediaPipe."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["12"], filtros)
+
+
 PROCESSADORES_EXERCICIO = {
     "1": processar_rosca_biceps,
     "2": processar_agachamento,
@@ -222,4 +258,8 @@ PROCESSADORES_EXERCICIO = {
     "6": processar_afundo,
     "7": processar_stiff,
     "8": processar_prancha,
+    "9": processar_remada_curvada,
+    "10": processar_supino,
+    "11": processar_elevacao_lateral,
+    "12": processar_elevacao_pelvica,
 }

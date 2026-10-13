@@ -130,6 +130,16 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
     coords_postura = None
     angulo_seg_suave = None
 
+    nome = config_exercicio.get("nome", "")
+    if "Remada" in nome:
+        return validar_postura_remada(keypoints_data, melhor_lado, filtros)
+    elif "Supino" in nome:
+        return validar_postura_supino(keypoints_data, melhor_lado, filtros)
+    elif "Elevacao Lateral" in nome:
+        return validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros)
+    elif "Elevacao Pelvica" in nome:
+        return validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros)
+
     if not config_exercicio.get("postura"):
         return postura_segura, coords_postura, angulo_seg_suave
 
@@ -264,6 +274,109 @@ def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
 
     postura_correta = angulo_suave >= 160.0
     return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)
+
+
+def validar_postura_remada(keypoints_data, melhor_lado, filtros=None):
+    """Valida a inclinação do tronco na Remada Curvada (Ombro-Quadril vs vertical).
+
+    Garante que as costas não arredondem (> 75°) e que o tronco mantenha inclinação segura (>= 30°).
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    s1_idx = 5 if melhor_lado == "esq" else 6   # Ombro
+    s2_idx = 11 if melhor_lado == "esq" else 12 # Quadril
+
+    if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
+        return True, None, None
+
+    sp1 = keypoints_data[s1_idx][:2]
+    sp2 = keypoints_data[s2_idx][:2]
+    coords_postura = (sp1, sp2)
+    sp3 = (sp2[0], sp2[1] - 50)  # Linha vertical imaginária
+
+    angulo_bruto = calcular_angulo(sp1, sp2, sp3)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = 30.0 <= angulo_suave <= 75.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_supino(keypoints_data, melhor_lado, filtros=None):
+    """Valida a abertura dos cotovelos no Supino com Halteres (Quadril-Ombro-Cotovelo).
+
+    Garante que os cotovelos não abram a mais de 90° em relação ao tronco para proteger os ombros.
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
+    o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
+    c_idx = 7 if melhor_lado == "esq" else 8    # Cotovelo
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
+        return True, None, None
+
+    p_quadril = keypoints_data[q_idx][:2]
+    p_ombro = keypoints_data[o_idx][:2]
+    p_cotovelo = keypoints_data[c_idx][:2]
+    coords_postura = (p_ombro, p_cotovelo)
+
+    angulo_bruto = calcular_angulo(p_quadril, p_ombro, p_cotovelo)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 90.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros=None):
+    """Valida a altura dos braços na Elevação Lateral (Quadril-Ombro-Cotovelo).
+
+    Garante que os braços não passem da linha horizontal dos ombros (> 95°).
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
+    o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
+    c_idx = 7 if melhor_lado == "esq" else 8    # Cotovelo
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
+        return True, None, None
+
+    p_quadril = keypoints_data[q_idx][:2]
+    p_ombro = keypoints_data[o_idx][:2]
+    p_cotovelo = keypoints_data[c_idx][:2]
+    coords_postura = (p_ombro, p_cotovelo)
+
+    angulo_bruto = calcular_angulo(p_quadril, p_ombro, p_cotovelo)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 95.0
+    return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros=None):
+    """Valida o alinhamento da extensão na Elevação Pélvica (Ombro-Quadril-Joelho).
+
+    Garante que não ocorra hiperextensão da coluna lombar no topo (> 185°).
+    Retorna (postura_segura, coords_postura, angulo_suave).
+    """
+    o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
+    q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
+    j_idx = 13 if melhor_lado == "esq" else 14  # Joelho
+
+    if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, q_idx, j_idx)):
+        return True, None, None
+
+    p_ombro = keypoints_data[o_idx][:2]
+    p_quadril = keypoints_data[q_idx][:2]
+    p_joelho = keypoints_data[j_idx][:2]
+    coords_postura = (p_ombro, p_quadril)
+
+    angulo_bruto = calcular_angulo(p_ombro, p_quadril, p_joelho)
+    filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
+    angulo_suave = filtro_post.atualizar(angulo_bruto) if filtro_post else angulo_bruto
+
+    postura_segura = angulo_suave <= 185.0
+    return postura_segura, coords_postura, angulo_suave
 
 
 def calcular_calorias(tempo_segundos, met, peso_kg=70.0):

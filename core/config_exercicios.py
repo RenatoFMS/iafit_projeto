@@ -118,5 +118,66 @@ EXERCICIOS = {
         "msg_inicio": "Segure a posicao.",
         "msg_erro": "ERRO: Levante o quadril!",
         "msg_voz": "Levante o quadril"
+    },
+    "9": {
+        "nome": "Remada Curvada",
+        "met": 3.5,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Ombro, Quadril em relação à vertical
+        "postura_vertical": True,
+        "limite_postura": 75, # Tronco deve manter inclinação controlada sem arredondar as costas
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 160, "fim": 70, # Braço estendido (160°) -> puxada completa (70°)
+        "msg_fim": "Boa puxada! Estique o braco.",
+        "msg_inicio": "Puxe os cotovelos.",
+        "msg_erro": "ERRO: Mantenha as costas retas!",
+        "msg_voz": "Mantenha as costas retas"
+    },
+    "10": {
+        "nome": "Supino Halteres",
+        "met": 3.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Quadril, Ombro, Cotovelo (ângulo de abertura dos cotovelos)
+        "postura_vertical": False,
+        "limite_postura": 90, # Evitar abrir os cotovelos a 90° ou mais para proteger os ombros
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 80, "fim": 160, # Halteres no peito (80°) -> empurrada no topo (160°)
+        "msg_fim": "Boa subida! Desca com controle.",
+        "msg_inicio": "Empurre para cima.",
+        "msg_erro": "ERRO: Feche um pouco os cotovelos!",
+        "msg_voz": "Feche os cotovelos"
+    },
+    "11": {
+        "nome": "Elevacao Lateral",
+        "met": 2.8,
+        "lados": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Quadril, Ombro, Cotovelo (90º no topo)
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Braço não deve passar da linha horizontal dos ombros
+        "postura_vertical": False,
+        "limite_postura": 95, # Não passar da linha dos ombros (95°)
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 20, "fim": 90, # Braços ao lado do corpo (20°) -> linha dos ombros (90°)
+        "ignorar_assimetria": False,
+        "msg_fim": "Boa altura! Desca devagar.",
+        "msg_inicio": "Eleve ate os ombros.",
+        "msg_erro": "ERRO: Nao eleve acima dos ombros!",
+        "msg_voz": "Abaixo dos ombros"
+    },
+    "12": {
+        "nome": "Elevacao Pelvica",
+        "met": 3.5,
+        "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Ombro, Quadril, Joelho (extensão do quadril no topo)
+        "postura": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Evitar hiperextensão lombar no topo
+        "postura_vertical": False,
+        "limite_postura": 185, # Não ultrapassar 185° para não hiperestender a lombar
+        "regra_postura": ">",
+        "inicio": 110, "fim": 175, # No chão flexionado (110°) -> extensão completa do quadril (175°)
+        "ignorar_assimetria": True,
+        "msg_fim": "Extensao total! Desca.",
+        "msg_inicio": "Eleve o quadril.",
+        "msg_erro": "ERRO: Nao hiperestenda a lombar!",
+        "msg_voz": "Alinhe a coluna"
     }
 }
