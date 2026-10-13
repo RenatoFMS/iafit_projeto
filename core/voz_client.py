@@ -5,8 +5,10 @@ from gtts import gTTS
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-# INICIALIZAÇÃO GLOBAL: Abre o canal de áudio apenas uma vez ao arrancar o sistema
-pygame.mixer.init()
+try:
+    pygame.mixer.init()
+except Exception:
+    pass
 
 def _executar_voz(texto):
     ficheiro_temp = f"temp_voz_{threading.get_ident()}.mp3" 

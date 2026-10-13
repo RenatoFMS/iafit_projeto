@@ -67,5 +67,33 @@ EXERCICIOS = {
         "msg_inicio": "Suba o tronco.",
         "msg_erro": "ERRO: Nao puxe o pescoco!",
         "msg_voz": "Nao puxe o pescoco"
+    },
+    "6": {
+        "nome": "Afundo (Lunge)",
+        "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Quadril, Joelho, Tornozelo
+        "postura": {"esq": (5, 11, 14), "dir": (6, 12, 13)}, # Ombro, Quadril, Joelho traseiro
+        "postura_vertical": False,
+        "limite_postura": 145, # Alinhamento tronco-coxa traseira (180° reto; < 145° inclinação excessiva)
+        "regra_postura": "<",
+        "inicio": 160, "fim": 90, # Desce perto de 90 graus no joelho
+        "ignorar_assimetria": True,
+        "msg_fim": "Profundidade OK! Suba.",
+        "msg_inicio": "Desca o quadril.",
+        "msg_erro": "ERRO: Tronco muito inclinado!",
+        "msg_voz": "Endireite o tronco"
+    },
+    "7": {
+        "nome": "Stiff",
+        "lados": {"esq": (5, 11, 13), "dir": (6, 12, 14)}, # Ombro, Quadril, Joelho (extensão do quadril)
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Ombro, Quadril em relação à vertical
+        "postura_vertical": True,
+        "limite_postura": 75, # Margem segura de inclinação para manter a curvatura lombar neutra
+        "regra_postura": ">",
+        "inicio": 170, "fim": 80,
+        "ignorar_assimetria": True,
+        "msg_fim": "Boa descida! Suba.",
+        "msg_inicio": "Desca o tronco.",
+        "msg_erro": "ERRO: Mantenha as costas retas!",
+        "msg_voz": "Endireite as costas"
     }
 }

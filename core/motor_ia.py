@@ -27,6 +27,7 @@ def calcular_assimetria(keypoints_data):
     return angulo_esq, angulo_dir, alerta
 
 def processar_exercicio(keypoints_data, config_exercicio, filtros):
+    global ultimo_aviso
     resultados = []
     melhor_lado = None
     maior_confianca = 0
@@ -105,9 +106,14 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
         angulo_esq, angulo_dir, alerta_assimetria = None, None, False
     else:
         angulo_esq, angulo_dir, alerta_assimetria = calcular_assimetria(keypoints_data)
+        if angulo_esq is not None and angulo_dir is not None:
+            if abs(angulo_esq - angulo_dir) > 25:
+                agora = time.time()
+                if agora - ultimo_aviso > 4:
+                    falar("Equilibre a força dos dois braços")
+                    ultimo_aviso = agora
 
     # 6. Definição do Alerta e Feedback de Voz (Cooldown 4s)
-    global ultimo_aviso
     if not postura_segura:
         feedback = config_exercicio.get("msg_erro", "ERRO: Corrija a postura!")
         cor = (0, 0, 255) # Vermelho
@@ -136,12 +142,31 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
         
     return resultados
 
+def _obter_coord_conf(landmark):
+    """Extrai ((x, y), confianca) de um landmark MediaPipe ou estrutura equivalente."""
+    if hasattr(landmark, 'x') and hasattr(landmark, 'y'):
+        conf = getattr(landmark, 'visibility', getattr(landmark, 'confidence', 1.0))
+        return (landmark.x, landmark.y), conf
+    elif isinstance(landmark, (list, tuple)):
+        conf = landmark[2] if len(landmark) > 2 else 1.0
+        return (landmark[0], landmark[1]), conf
+    elif isinstance(landmark, dict):
+        conf = landmark.get('visibility', landmark.get('confidence', landmark.get('conf', 1.0)))
+        return (landmark['x'], landmark['y']), conf
+    return (0, 0), 0.0
+
 # Mapeamento MediaPipe (33 landmarks) -> índices COCO (17 keypoints) usados pelo motor
 _MP_PARA_COCO = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
 def landmarks_mediapipe_para_keypoints(landmarks):
     """Converte landmarks do MediaPipe para o formato [x, y, confiança] do YOLO/COCO."""
-    return [[landmarks[i].x, landmarks[i].y, landmarks[i].visibility] for i in _MP_PARA_COCO]
+    if len(landmarks) == 17 and isinstance(landmarks[0], (list, tuple)) and not hasattr(landmarks[0], 'x'):
+        return landmarks
+    kps = []
+    for i in _MP_PARA_COCO:
+        (x, y), conf = _obter_coord_conf(landmarks[i])
+        kps.append([x, y, conf])
+    return kps
 
 # Dentro do seu loop principal de processamento do MediaPipe:
 def processar_desenvolvimento_ombro(landmarks, filtros):
@@ -163,6 +188,29 @@ def processar_rosca_biceps(landmarks, filtros):
     40° = contração no topo = 100%), a contagem de repetições e o alerta_assimetria
     (diferença > 15°), devolvendo a mesma lista de resultados que processar_exercicio.
     """
+    global ultimo_aviso
+
+    # Deteção de assimetria muscular de movimento (braço esquerdo: 11, 13, 15; braço direito: 12, 14, 16)
+    indices_bracos = [11, 13, 15, 12, 14, 16]
+    coords_confs = {idx: _obter_coord_conf(landmarks[idx]) for idx in indices_bracos}
+
+    if all(coords_confs[idx][1] > 0.5 for idx in indices_bracos):
+        p_ombro_esq = coords_confs[11][0]
+        p_cotovelo_esq = coords_confs[13][0]
+        p_pulso_esq = coords_confs[15][0]
+        p_ombro_dir = coords_confs[12][0]
+        p_cotovelo_dir = coords_confs[14][0]
+        p_pulso_dir = coords_confs[16][0]
+
+        angulo_esq = calcular_angulo(p_ombro_esq, p_cotovelo_esq, p_pulso_esq)
+        angulo_dir = calcular_angulo(p_ombro_dir, p_cotovelo_dir, p_pulso_dir)
+
+        if abs(angulo_esq - angulo_dir) > 25:
+            agora = time.time()
+            if agora - ultimo_aviso > 4:
+                falar("Equilibre a força dos dois braços")
+                ultimo_aviso = agora
+
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["1"], filtros)
 
@@ -174,6 +222,29 @@ def processar_flexao(landmarks, filtros):
     segurança do quadril (config '3') e o alerta_assimetria (diferença > 15°),
     devolvendo a mesma lista de resultados que processar_exercicio.
     """
+    global ultimo_aviso
+
+    # Deteção de assimetria muscular de movimento (braço esquerdo: 11, 13, 15; braço direito: 12, 14, 16)
+    indices_bracos = [11, 13, 15, 12, 14, 16]
+    coords_confs = {idx: _obter_coord_conf(landmarks[idx]) for idx in indices_bracos}
+
+    if all(coords_confs[idx][1] > 0.5 for idx in indices_bracos):
+        p_ombro_esq = coords_confs[11][0]
+        p_cotovelo_esq = coords_confs[13][0]
+        p_pulso_esq = coords_confs[15][0]
+        p_ombro_dir = coords_confs[12][0]
+        p_cotovelo_dir = coords_confs[14][0]
+        p_pulso_dir = coords_confs[16][0]
+
+        angulo_esq = calcular_angulo(p_ombro_esq, p_cotovelo_esq, p_pulso_esq)
+        angulo_dir = calcular_angulo(p_ombro_dir, p_cotovelo_dir, p_pulso_dir)
+
+        if abs(angulo_esq - angulo_dir) > 25:
+            agora = time.time()
+            if agora - ultimo_aviso > 4:
+                falar("Equilibre a força dos dois braços")
+                ultimo_aviso = agora
+
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["3"], filtros)
 
@@ -196,6 +267,26 @@ def processar_agachamento(landmarks, filtros):
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
     return processar_exercicio(keypoints_data, EXERCICIOS["2"], filtros)
 
+def processar_afundo(landmarks, filtros):
+    """Afundo / Lunge (160° -> 90°) com MediaPipe.
+
+    Avalia a flexão do joelho (Quadril-Joelho-Tornozelo) e o alinhamento postural
+    (Ombro-Quadril-Joelho traseiro) para evitar inclinação excessiva do tronco,
+    mantendo a mesma estrutura de contagem, suavização e cooldown de voz que usamos no Agachamento.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["6"], filtros)
+
+def processar_stiff(landmarks, filtros):
+    """Stiff (170° -> 80°) com MediaPipe.
+
+    Avalia a extensão/flexão do quadril (Ombro-Quadril-Joelho) e a segurança postural
+    das costas (ângulo Ombro-Quadril em relação à vertical), mantendo a mesma estrutura
+    de contagem, suavização e cooldown de voz que usamos no Agachamento.
+    """
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks)
+    return processar_exercicio(keypoints_data, EXERCICIOS["7"], filtros)
+
 def resetar_cooldown_voz():
     """Reinicia o cooldown dos alertas de voz de postura."""
     global ultimo_aviso
@@ -208,4 +299,6 @@ PROCESSADORES_EXERCICIO = {
     "3": processar_flexao,
     "4": processar_desenvolvimento_ombro,
     "5": processar_abdominal,
+    "6": processar_afundo,
+    "7": processar_stiff,
 }
