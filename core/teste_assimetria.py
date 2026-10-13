@@ -14,8 +14,13 @@ mp_drawing = mp.solutions.drawing_utils
 # 2. Configuração da Captura de Vídeo (Webcam 0)
 cap = cv2.VideoCapture('teste_agachamento.mp4')
 
-# Iniciar instância do MediaPipe com margens de confiança rigorosas
-with mp_pose.Pose(min_detection_confidence=0.7, min_tracking_confidence=0.7) as pose:
+# Iniciar instância do MediaPipe com parâmetros otimizados para alta performance em tempo real
+with mp_pose.Pose(
+    static_image_mode=False,
+    model_complexity=1,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.7
+) as pose:
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -24,10 +29,7 @@ with mp_pose.Pose(min_detection_confidence=0.7, min_tracking_confidence=0.7) as 
         # FORÇAR RESOLUÇÃO PADRÃO DE WEBCAM PARA TERMOS ESPAÇO
         frame = cv2.resize(frame, (640, 480))
         
-        # Otimização: Converter frame para RGB...
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-        # Otimização: Converter frame para RGB para o MediaPipe processar mais rápido
+        # Otimização: Converter frame para RGB e desativar writeable para poupar memória RAM
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
         results = pose.process(image)
