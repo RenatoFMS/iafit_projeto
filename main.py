@@ -214,14 +214,15 @@ while camera.isOpened():
     cv2.rectangle(frame, (largura_atual - 140, 10), (largura_atual - 20, 35), (0, 0, 255), -1)
     cv2.putText(frame, "SAIR [Q]", (largura_atual - 125, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-    # Menu de atalhos no rodapé: suporte a 12 exercícios
+    # Menu de atalhos no rodapé: suporte a 16 exercícios
     cv2.rectangle(frame, (0, altura_atual - 30), (largura_atual, altura_atual), (0, 0, 0), -1)
     atalhos_exibicao = {
         '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6',
-        '7': '7', '8': '8', '9': '9', '10': '0', '11': '-', '12': '='
+        '7': '7', '8': '8', '9': '9', '10': '0', '11': '-', '12': '=',
+        '13': 'd', '14': 'e', '15': 'f', '16': 'g'
     }
     texto_menu = " ".join(f"[{atalhos_exibicao.get(k, k)}]{d['nome'].split()[0]}" for k, d in EXERCICIOS.items())
-    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Teclas: {texto_menu}", (10, altura_atual - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.32, (255, 255, 255), 1, cv2.LINE_AA)
     # -----------------------------------
 
     cv2.imshow(nome_janela, frame)
@@ -238,6 +239,10 @@ while camera.isOpened():
         '0': '10', 'a': '10', 'A': '10',
         '-': '11', 'b': '11', 'B': '11',
         '=': '12', 'c': '12', 'C': '12',
+        'd': '13', 'D': '13',
+        'e': '14', 'E': '14',
+        'f': '15', 'F': '15',
+        'g': '16', 'G': '16',
     }
     
     if tecla == ord('q') or tecla == ord('Q'):

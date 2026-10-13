@@ -179,5 +179,64 @@ EXERCICIOS = {
         "msg_inicio": "Eleve o quadril.",
         "msg_erro": "ERRO: Nao hiperestenda a lombar!",
         "msg_voz": "Alinhe a coluna"
+    },
+    "13": {
+        "nome": "Mergulho no Banco",
+        "met": 3.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Tronco próximo ao banco
+        "postura_vertical": True,
+        "limite_postura": 40,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 160, "fim": 90, # Braço estendido (160°) -> descida até 90°
+        "msg_fim": "Profundidade OK! Suba.",
+        "msg_inicio": "Desca flexionando os cotovelos.",
+        "msg_erro": "ERRO: Mantenha o quadril proximo ao banco!",
+        "msg_voz": "Aproxime o quadril"
+    },
+    "14": {
+        "nome": "Rosca Martelo",
+        "met": 2.8,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso (pegada neutra)
+        "postura": {"esq": (11, 5, 7), "dir": (12, 6, 8)}, # Travar cotovelo ao lado do tronco
+        "postura_vertical": False,
+        "limite_postura": 35,
+        "regra_postura": ">",
+        "inicio": 160, "fim": 40,
+        "msg_fim": "Boa contracao! Desca.",
+        "msg_inicio": "Estique o braco!",
+        "msg_erro": "ERRO: Cotovelo muito a frente!",
+        "msg_voz": "Trave o cotovelo"
+    },
+    "15": {
+        "nome": "Agachamento Sumo",
+        "met": 5.0,
+        "lados": {"esq": (11, 13, 15), "dir": (12, 14, 16)}, # Quadril, Joelho, Tornozelo
+        "postura": {"esq": (5, 11), "dir": (6, 12)}, # Base dos pés mais aberta que os ombros
+        "postura_vertical": True,
+        "limite_postura": 45,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 170, "fim": 85,
+        "msg_fim": "Profundidade OK! Suba.",
+        "msg_inicio": "Desca o quadril.",
+        "msg_erro": "ERRO: Afaste mais os pes!",
+        "msg_voz": "Afaste mais os pes"
+    },
+    "16": {
+        "nome": "Barra Fixa",
+        "met": 4.0,
+        "lados": {"esq": (5, 7, 9), "dir": (6, 8, 10)}, # Ombro, Cotovelo, Pulso
+        "postura": {"esq": (5, 11), "dir": (6, 12)},
+        "postura_vertical": True,
+        "limite_postura": 35,
+        "regra_postura": ">",
+        "bracos": {"esq": (5, 7, 9), "dir": (6, 8, 10)},
+        "inicio": 160, "fim": 65, # Pendurado braço estendido (160°) -> queixo acima da barra (65°)
+        "msg_fim": "Queixo acima da barra! Desca.",
+        "msg_inicio": "Puxe o corpo para cima.",
+        "msg_erro": "ERRO: Passe o queixo da barra!",
+        "msg_voz": "Passe o queixo da barra"
     }
 }

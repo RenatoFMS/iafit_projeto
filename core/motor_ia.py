@@ -24,6 +24,8 @@ from core.analise_biomecanica import (
     validar_postura_supino,
     validar_postura_elevacao_lateral,
     validar_postura_elevacao_pelvica,
+    validar_postura_sumo,
+    validar_barra_fixa,
     calcular_calorias,
 )
 
@@ -249,6 +251,59 @@ def processar_elevacao_pelvica(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["12"], filtros)
 
 
+def processar_mergulho_banco(landmarks, filtros, largura=None, altura=None):
+    """Mergulho no Banco (160° -> 90°) com MediaPipe."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["13"], filtros)
+
+
+def processar_rosca_martelo(landmarks, filtros, largura=None, altura=None):
+    """Rosca Martelo (160° -> 40°) com MediaPipe e deteção de assimetria dos braços."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    return processar_exercicio(keypoints_data, EXERCICIOS["14"], filtros)
+
+
+def processar_agachamento_sumo(landmarks, filtros, largura=None, altura=None):
+    """Agachamento Sumô com MediaPipe e validação da largura da base dos pés."""
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    postura_ok, _, _ = validar_postura_sumo(landmarks if len(landmarks) >= 33 else keypoints_data)
+    if not postura_ok:
+        _executar_aviso_voz("Afaste mais os pés")
+
+    return processar_exercicio(keypoints_data, EXERCICIOS["15"], filtros)
+
+
+def processar_barra_fixa(landmarks, filtros, largura=None, altura=None):
+    """Barra Fixa com MediaPipe e validação do queixo acima da barra."""
+    assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
+    if assimetria:
+        _executar_aviso_voz("Equilibre a força dos dois braços")
+
+    queixo_acima, _, _ = validar_barra_fixa(landmarks)
+    keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
+    resultados = processar_exercicio(keypoints_data, EXERCICIOS["16"], filtros)
+
+    if resultados:
+        porc = resultados[0].get("porc", 0)
+        if porc >= 80 and not queixo_acima:
+            resultados[0]["feedback"] = "ERRO: Passe o queixo da barra!"
+            resultados[0]["cor"] = (0, 0, 255)
+            _executar_aviso_voz("Passe o queixo da barra")
+        elif queixo_acima and porc >= 70:
+            resultados[0]["feedback"] = "Queixo acima da barra! Desça."
+            resultados[0]["cor"] = (0, 255, 0)
+
+    return resultados
+
+
 PROCESSADORES_EXERCICIO = {
     "1": processar_rosca_biceps,
     "2": processar_agachamento,
@@ -262,4 +317,8 @@ PROCESSADORES_EXERCICIO = {
     "10": processar_supino,
     "11": processar_elevacao_lateral,
     "12": processar_elevacao_pelvica,
+    "13": processar_mergulho_banco,
+    "14": processar_rosca_martelo,
+    "15": processar_agachamento_sumo,
+    "16": processar_barra_fixa,
 }

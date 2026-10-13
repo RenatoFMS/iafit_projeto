@@ -139,6 +139,8 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
         return validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros)
     elif "Elevacao Pelvica" in nome:
         return validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros)
+    elif "Sumo" in nome or "Sumô" in nome:
+        return validar_postura_sumo(keypoints_data, melhor_lado, filtros)
 
     if not config_exercicio.get("postura"):
         return postura_segura, coords_postura, angulo_seg_suave
@@ -377,6 +379,73 @@ def validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros=None):
 
     postura_segura = angulo_suave <= 185.0
     return postura_segura, coords_postura, angulo_suave
+
+
+def validar_postura_sumo(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
+    """Valida a postura do Agachamento Sumô verificando a largura da base dos pés.
+
+    Regra do Sumô: A distância entre os tornozelos (MediaPipe 27 e 28 / COCO 15 e 16)
+    deve ser maior que a distância entre os ombros (MediaPipe 11 e 12 / COCO 5 e 6).
+    Retorna (postura_segura, coords_postura, diferenca_largura).
+    """
+    if len(landmarks_ou_keypoints) >= 33:
+        p_oe, conf_oe = _obter_coord_conf(landmarks_ou_keypoints[11])
+        p_od, conf_od = _obter_coord_conf(landmarks_ou_keypoints[12])
+        p_te, conf_te = _obter_coord_conf(landmarks_ou_keypoints[27])
+        p_td, conf_td = _obter_coord_conf(landmarks_ou_keypoints[28])
+        if any(c < 0.5 for c in (conf_oe, conf_od, conf_te, conf_td)):
+            return True, None, None
+    else:
+        kps = landmarks_ou_keypoints
+        if any(kps[i][2] < 0.5 for i in (5, 6, 15, 16)):
+            return True, None, None
+        p_oe = kps[5][:2]
+        p_od = kps[6][:2]
+        p_te = kps[15][:2]
+        p_td = kps[16][:2]
+
+    dist_ombros = abs(p_oe[0] - p_od[0])
+    dist_pes = abs(p_te[0] - p_td[0])
+
+    diferenca = dist_pes - dist_ombros
+    postura_segura = dist_pes > dist_ombros
+    coords_postura = (p_te, p_td)
+    return postura_segura, coords_postura, diferenca
+
+
+def validar_barra_fixa(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
+    """Valida a conclusão da repetição na Barra Fixa baseando-se no alinhamento vertical.
+
+    Regra da Barra Fixa: O nariz ou boca (landmarks 0 a 2) deve ultrapassar no eixo Y
+    a altura dos pulsos (MediaPipe 15 e 16 / COCO 9 e 10) no topo do movimento.
+    Retorna (queixo_acima, coords_visual, diferenca_y).
+    """
+    if len(landmarks_ou_keypoints) >= 33:
+        p_nariz, conf_n = _obter_coord_conf(landmarks_ou_keypoints[0])
+        p_pe, conf_pe = _obter_coord_conf(landmarks_ou_keypoints[15])
+        p_pd, conf_pd = _obter_coord_conf(landmarks_ou_keypoints[16])
+        if conf_n < 0.5 or (conf_pe < 0.5 and conf_pd < 0.5):
+            return False, None, None
+        pulsos_y = []
+        if conf_pe >= 0.5: pulsos_y.append(p_pe[1])
+        if conf_pd >= 0.5: pulsos_y.append(p_pd[1])
+        y_barra = sum(pulsos_y) / len(pulsos_y)
+        coords_visual = (p_nariz, (p_nariz[0], y_barra))
+    else:
+        kps = landmarks_ou_keypoints
+        if kps[0][2] < 0.5 or (kps[9][2] < 0.5 and kps[10][2] < 0.5):
+            return False, None, None
+        p_nariz = kps[0][:2]
+        pulsos_y = []
+        if kps[9][2] >= 0.5: pulsos_y.append(kps[9][1])
+        if kps[10][2] >= 0.5: pulsos_y.append(kps[10][1])
+        y_barra = sum(pulsos_y) / len(pulsos_y)
+        coords_visual = (p_nariz, (p_nariz[0], y_barra))
+
+    # Menor Y no OpenCV indica posição verticalmente mais alta
+    queixo_acima = p_nariz[1] <= y_barra
+    diferenca_y = y_barra - p_nariz[1]
+    return queixo_acima, coords_visual, diferenca_y
 
 
 def calcular_calorias(tempo_segundos, met, peso_kg=70.0):
