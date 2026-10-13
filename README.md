@@ -1,92 +1,58 @@
-# 🏋️‍♂️ IAFit - Scanner Biomecânico Profissional
+ IAFit - Motor de Visão Computacional 🏋️‍♂️👁️
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)
-![YOLO](https://img.shields.io/badge/YOLOv8-00FFFF?style=for-the-badge&logo=YOLO&logoColor=black)
+O **IAFit** é o motor de inteligência artificial e visão computacional desenvolvido como parte do Trabalho de Conclusão de Curso (TCC) em Desenvolvimento de Sistemas. O objetivo do sistema é monitorizar, analisar e corrigir a execução de exercícios físicos em tempo real utilizando apenas a câmara web do utilizador, enviando os dados processados para um painel gamificado.
 
-O **IAFit** é um sistema de visão computacional desenvolvido como Trabalho de Conclusão de Curso (TCC) no curso técnico de Desenvolvimento de Sistemas na ETEC Zona Leste. 
+## ✨ Funcionalidades Principais
 
-O projeto atua como um "Personal Trainer" digital. Utilizando o modelo de Inteligência Artificial **YOLOv8-pose**, o sistema mapeia as articulações do corpo em tempo real para calcular a amplitude dos movimentos, contar repetições e, principalmente, **prevenir lesões através da análise de segurança da postura**.
+* **Rastreamento Biomecânico em Tempo Real:** Mapeamento de pontos articulares do corpo humano com alta precisão e baixa latência.
+* **Módulo Matemático Independente:** Cálculo vetorial de ângulos para determinar as fases concêntricas e excêntricas de cada movimento.
+* **Feedback de Postura e Assimetria:** Deteção de desvios no eixo corporal (ex: descida excessiva do quadril na flexão ou assimetria nos braços).
+* **Arquitetura "Vertical Slice":** Sincronização automática e em tempo real dos treinos concluídos com a base de dados na nuvem.
 
-## ✨ Principais Funcionalidades
+## 🏋️ Exercícios Suportados (MVP)
 
-*   **Análise de 5 Exercícios Base:** Suporte nativo para Rosca Bíceps, Agachamento, Flexão de Braço, Desenvolvimento de Ombro e Abdominal Supra.
-*   **Segurança Biomecânica Ativa:** O motor inteligente calcula a "Linha de Prumo" da gravidade. Se o usuário curvar o tronco de forma perigosa (ex: durante o agachamento), o sistema bloqueia a contagem e emite um alerta visual na tela.
-*   **Filtro de Suavização (Média Móvel):** Algoritmo matemático implementado para estabilizar tremores de câmeras comuns, garantindo uma precisão contínua da porcentagem de movimento.
-*   **Múltiplas Fontes de Vídeo:** O sistema é flexível e pode ser alimentado via Webcam do computador, arquivos de vídeo gravados (`.mp4`) ou transmissão ao vivo pelo celular (Câmera IP).
-*   **Arquitetura Data-Driven:** Adicionar novos exercícios não requer alteração na lógica da IA, apenas a inserção das coordenadas no banco de configurações.
+O motor suporta atualmente 5 exercícios fundamentais (compostos e isolados):
+1. **Rosca Bíceps** (Avaliação do ângulo do cotovelo e ombro)
+2. **Agachamento** (Avaliação do ângulo do joelho e quadril)
+3. **Flexão de Braços** (Avaliação de braços e alinhamento do tronco/quadril)
+4. **Desenvolvimento de Ombros** (Avaliação de extensão vertical)
+5. **Abdominal** (Avaliação da contração do tronco com limites de 150º a 70º)
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias e Ferramentas
 
-*   **Linguagem:** Python 3
-*   **Visão Computacional:** OpenCV (`cv2`)
-*   **Inteligência Artificial (Pose Estimation):** Ultralytics (YOLOv8)
-*   **Matemática e Filtros:** NumPy & Collections
+O sistema foi construído com uma arquitetura moderna e escalável:
 
----
+* **Linguagem Core:** Python 3
+* **Visão Computacional e IA:** OpenCV, Google MediaPipe, Ultralytics YOLOv8
+* **Backend e Persistência:** Google Firebase (Firestore) via `firebase-admin`
+* **Engenharia Assistida por IA:** O desenvolvimento da arquitetura, otimização de algoritmos matemáticos e refatoração do código foram acelerados com práticas avançadas de *Pair Programming* utilizando LLMs através da extensão **Antigravity** no VS Code.
 
-## 🚀 Como Instalar e Rodar o Projeto
+## ☁️ Persistência de Dados (Google Firebase)
 
-Siga os passos abaixo para testar o IAFit na sua máquina.
+O motor de Visão Computacional está totalmente integrado com o **Firebase Firestore**. 
+A arquitetura funciona através de um "Corte Vertical" (*Vertical Slice*): ao finalizar a execução de um exercício (trocando de movimento no teclado numérico ou fechando a aplicação com a tecla 'Q'), o sistema recolhe os dados locais e envia as repetições válidas e erros de postura automaticamente para a base de dados na nuvem, alimentando o Front-end (React) em tempo real.
 
-### 1. Clone o repositório
-Abra o seu terminal e rode o comando:
-```bash
-git clone [https://github.com/RenatoFMS/iafit_projeto.git](https://github.com/RenatoFMS/iafit_projeto.git)
-cd iafit_projeto
-```
+**⚠️ Configuração Local (Segurança):**
+Para que a comunicação funcione na sua máquina local, é obrigatório colocar o ficheiro de credenciais `firebase_key.json` na raiz do projeto. Por motivos de segurança cibernética e boas práticas, este ficheiro está blindado pelo `.gitignore` e nunca é versionado no repositório público.
 
-### 2. Crie um Ambiente Virtual (Recomendado)
-Para evitar conflitos com outras bibliotecas do seu computador, crie e ative um `venv`:
-```bash
-# No Linux/macOS
-python3 -m venv venv
-source venv/bin/activate
+## 🚀 Como Rodar o Projeto Localmente
 
-# No Windows
-python -m venv venv
-venv\Scripts\activate
-```
-
-### 3. Instale as Dependências
-Instale o OpenCV, Ultralytics e NumPy de uma só vez usando o arquivo de requisitos:
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Execute a Aplicação
-Com tudo instalado, basta iniciar o arquivo principal:
-```bash
-python main.py
-```
-*(Nota: Na primeira execução, o sistema fará o download automático do modelo `yolov8n-pose.pt`, o que leva apenas alguns segundos).*
-
----
-
-## 🎮 Como Usar
-
-Ao iniciar a aplicação, a janela de vídeo será aberta. 
-
-**Controles do Teclado:**
-*   Aperte a tecla correspondente ao exercício desejado a qualquer momento:
-    *   `1` - Rosca Bíceps
-    *   `2` - Agachamento (Ativa análise de postura do tronco)
-    *   `3` - Flexão de Braço
-    *   `4` - Desenvolvimento Ombro
-    *   `5` - Abdominal Supra
-*   `Q` - Encerra a aplicação.
-
-**Trocando a Fonte de Vídeo:**
-Para testar vídeos diferentes, abra o arquivo `main.py` em um editor de texto e altere a variável `FONTE_DE_VIDEO` (linha 14):
-```python
-# Para Webcam:
-FONTE_DE_VIDEO = 0 
-
-# Para um vídeo salvo na pasta:
-FONTE_DE_VIDEO = "teste_agachamento.mp4" 
-
-```
-
-## 👨‍💻 Autor
-
-Desenvolvido por **Renato Felipe Martins Silva**.
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/RenatoFMS/iafit_projeto.git
+   ```
+2. Entre na pasta do projeto e ative o seu ambiente virtual (venv):
+   ```bash
+   cd iafit_projeto
+   source venv/bin/activate  # No Linux (Ubuntu)
+   ```
+3. Instale as dependências rigorosas (garantindo compatibilidade do Protobuf):
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Certifique-se de que o ficheiro `firebase_key.json` está na raiz do projeto.
+5. Inicie o scanner da câmara:
+   ```bash
+   python main.py
+   ```
+*(Utilize as teclas de 1 a 5 para alternar os exercícios e 'Q' para guardar e sair).*
