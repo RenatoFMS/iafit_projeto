@@ -10,6 +10,8 @@ para todos os vídeos da pasta 'dataset_qa/'.
 """
 
 import argparse
+from datetime import datetime
+import json
 import os
 import sys
 import time
@@ -70,7 +72,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def executar_teste(video_path, id_ex):
+def executar_teste(video_path, id_ex, url=None):
     """Processa um único vídeo e imprime o respetivo relatório de QA."""
     # Validação do arquivo de vídeo
     if not os.path.isfile(video_path):
@@ -81,6 +83,14 @@ def executar_teste(video_path, id_ex):
     if id_str not in EXERCICIOS:
         print(f"Erro: Exercício ID '{id_str}' inválido. IDs válidos: 1 a {len(EXERCICIOS)}.")
         return None
+
+    # Se a URL não for fornecida diretamente, tenta buscar no mapeamento local
+    if url is None:
+        try:
+            with open("dataset_qa/urls_mapeamento.json", "r", encoding="utf-8") as f:
+                url = json.load(f).get(id_str, "N/A")
+        except Exception:
+            url = "N/A"
 
     config = EXERCICIOS[id_str]
     nome_exercicio = config.get("nome", f"Exercício {id_str}")
@@ -97,6 +107,7 @@ def executar_teste(video_path, id_ex):
         return {
             "id": id_str,
             "video": os.path.basename(video_path),
+            "url": url if url else "N/A",
             "nome": nome_exercicio,
             "eh_isometrico": eh_isometrico,
             "resultado_str": "Erro ao abrir vídeo",
@@ -247,11 +258,13 @@ def executar_teste(video_path, id_ex):
     gasto_calorico = calcular_calorias(tempo_serie, met_ex, peso_kg=70.0)
 
     campo_metrica = "Tempo Isométrico" if eh_isometrico else "Total de Repetições"
+    url_display = url if url else "N/A"
     relatorio_texto = (
         "\n" + "=" * 50 + "\n"
         "            RELATÓRIO DE QA - IAFIT\n"
         + "=" * 50 + "\n"
         f"Vídeo: {os.path.basename(video_path)}\n"
+        f"URL do Vídeo: {url_display}\n"
         f"Nome do Exercício: {nome_exercicio}\n"
         f"{campo_metrica}: {total_metrica_str}\n"
         f"Erros de Postura contabilizados: {erros_postura}\n"
@@ -264,6 +277,7 @@ def executar_teste(video_path, id_ex):
     return {
         "id": id_str,
         "video": os.path.basename(video_path),
+        "url": url_display,
         "nome": nome_exercicio,
         "eh_isometrico": eh_isometrico,
         "resultado_str": total_metrica_str,
@@ -282,6 +296,14 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
     if not os.path.isdir(pasta_dataset):
         print(f"Erro: A diretoria '{pasta_dataset}' não foi encontrada.")
         sys.exit(1)
+
+    # Leitura do mapeamento de URLs do YouTube (caso exista)
+    caminho_mapa = os.path.join(pasta_dataset, "urls_mapeamento.json")
+    try:
+        with open(caminho_mapa, "r", encoding="utf-8") as f:
+            mapa_urls = json.load(f)
+    except Exception:
+        mapa_urls = {}
 
     ficheiros = [f for f in os.listdir(pasta_dataset) if f.lower().endswith(".mp4")]
     if not ficheiros:
@@ -313,9 +335,10 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
             print(f"\n[Aviso] Ficheiro '{nome_arquivo}' ignorado: ID '{id_ex}' não existe no catálogo de exercícios.")
             continue
 
+        url_video = mapa_urls.get(str(id_ex), "N/A")
         print(f">>> Processando [{id_ex}] {EXERCICIOS[id_ex]['nome']} ({nome_arquivo})...")
         try:
-            res = executar_teste(caminho_video, id_ex)
+            res = executar_teste(caminho_video, id_ex, url=url_video)
             if res is not None:
                 resultados_lote.append(res)
                 if res.get("relatorio_texto"):
@@ -353,8 +376,11 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
 
     print(sumario_texto)
 
-    # Exportação de todo o relatório detalhado e do sumário final para relatorio_qa.txt
-    caminho_exportacao = "relatorio_qa.txt"
+    # Exportação de todo o relatório detalhado e do sumário final para relatorios_qa/
+    pasta_relatorios = "relatorios_qa"
+    os.makedirs(pasta_relatorios, exist_ok=True)
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M")
+    caminho_exportacao = os.path.join(pasta_relatorios, f"relatorio_qa_{timestamp_str}.txt")
     conteudo_completo = "".join(relatorios_detalhados) + "\n" + sumario_texto
     try:
         with open(caminho_exportacao, "w", encoding="utf-8") as f:
