@@ -5,23 +5,30 @@ Responsável pela extração de coordenadas, cálculo de ângulos articulares,
 avaliação de assimetria muscular e validação de regras posturais para os exercícios.
 """
 
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from core.math_utils import calcular_angulo, calcular_porcentagem
 
 # Constantes e índices anatômicos (padrão COCO / YOLOv8-pose)
-BRACO_ESQ = (5, 7, 9)   # Ombro, Cotovelo, Pulso esquerdos
-BRACO_DIR = (6, 8, 10)  # Ombro, Cotovelo, Pulso direitos
-LIMITE_ASSIMETRIA = 15  # Diferença angular para alerta visual (graus)
-LIMITE_ASSIMETRIA_VOZ = 25  # Diferença angular para alerta sonoro (graus)
+BRACO_ESQ: Tuple[int, int, int] = (5, 7, 9)   # Ombro, Cotovelo, Pulso esquerdos
+BRACO_DIR: Tuple[int, int, int] = (6, 8, 10)  # Ombro, Cotovelo, Pulso direitos
+LIMITE_ASSIMETRIA: int = 15  # Diferença angular para alerta visual (graus)
+LIMITE_ASSIMETRIA_VOZ: int = 25  # Diferença angular para alerta sonoro (graus)
 
 # Mapeamento MediaPipe (33 landmarks) -> índices COCO (17 keypoints)
-_MP_PARA_COCO = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+_MP_PARA_COCO: List[int] = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
 
-def _obter_coord_conf(landmark):
+def _obter_coord_conf(landmark: Any) -> Tuple[Tuple[float, float], float]:
     """Extrai ((x, y), confianca) de um landmark MediaPipe ou estrutura equivalente.
 
     Suporta objetos MediaPipe (com atributos x, y, visibility/confidence),
     listas/tuplas [x, y, conf] ou dicionários {'x': ..., 'y': ...}.
+
+    Args:
+        landmark: Objeto MediaPipe, sequência ou dicionário contendo coordenadas.
+
+    Returns:
+        Tupla contendo ((x, y), confianca).
     """
     if hasattr(landmark, 'x') and hasattr(landmark, 'y'):
         conf = getattr(landmark, 'visibility', getattr(landmark, 'confidence', 1.0))
@@ -35,8 +42,15 @@ def _obter_coord_conf(landmark):
     return (0.0, 0.0), 0.0
 
 
-def _obter_z(landmark):
-    """Extrai a coordenada de profundidade Z de um landmark MediaPipe (ou 0.0 se inexistente)."""
+def _obter_z(landmark: Any) -> float:
+    """Extrai a coordenada de profundidade Z de um landmark MediaPipe (ou 0.0 se inexistente).
+
+    Args:
+        landmark: Objeto MediaPipe ou dicionário com a coordenada de profundidade.
+
+    Returns:
+        Coordenada Z como float (ou 0.0 caso não esteja disponível).
+    """
     if hasattr(landmark, 'z'):
         return float(landmark.z)
     if isinstance(landmark, dict):
@@ -44,30 +58,44 @@ def _obter_z(landmark):
     return 0.0
 
 
-def _pt(keypoint):
+def _pt(keypoint: Sequence[float]) -> Tuple[float, ...]:
     """Devolve o ponto articular de um keypoint [x, y, conf(, z)].
 
     Retorna (x, y, z) se o keypoint tiver profundidade (MediaPipe) ou (x, y) caso contrário
     (YOLO/COCO), o que ativa automaticamente o cálculo 2D de fallback em calcular_angulo.
+
+    Args:
+        keypoint: Keypoint no formato [x, y, conf(, z)].
+
+    Returns:
+        Tupla com as coordenadas articulares (x, y, z) ou (x, y).
     """
     if len(keypoint) > 3:
         return (keypoint[0], keypoint[1], keypoint[3])
     return (keypoint[0], keypoint[1])
 
 
-def _ponto_acima(ponto, deslocamento=50):
-    """Cria um ponto de referência vertical imaginário acima de `ponto` (mesma profundidade Z)."""
+def _ponto_acima(ponto: Sequence[float], deslocamento: float = 50.0) -> Tuple[float, ...]:
+    """Cria um ponto de referência vertical imaginário acima de `ponto` (mesma profundidade Z).
+
+    Args:
+        ponto: Ponto de referência articular (x, y[, z]).
+        deslocamento: Deslocamento vertical em pixels acima do ponto (padrão: 50.0).
+
+    Returns:
+        Coordenadas do ponto vertical imaginário gerado.
+    """
     if len(ponto) > 2:
         return (ponto[0], ponto[1] - deslocamento, ponto[2])
     return (ponto[0], ponto[1] - deslocamento)
 
 
 def criar_detector_pose(
-    static_image_mode=False,
-    model_complexity=1,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.7
-):
+    static_image_mode: bool = False,
+    model_complexity: int = 1,
+    min_detection_confidence: float = 0.5,
+    min_tracking_confidence: float = 0.7
+) -> Any:
     """Cria e retorna uma instância otimizada do MediaPipe Pose.
 
     Configurações para máxima performance em tempo real (CPU):
@@ -75,6 +103,15 @@ def criar_detector_pose(
     - model_complexity=1: equilíbrio ideal entre velocidade e acurácia.
     - min_detection_confidence=0.5: limiar de confiança para detecção inicial.
     - min_tracking_confidence=0.7: rastreamento robusto para evitar perda do corpo.
+
+    Args:
+        static_image_mode: Se True, trata cada imagem de forma estática independente.
+        model_complexity: Complexidade do modelo Pose (0, 1 ou 2).
+        min_detection_confidence: Confiança mínima para detecção inicial.
+        min_tracking_confidence: Confiança mínima para rastreamento de pose.
+
+    Returns:
+        Instância inicializada de mediapipe.solutions.pose.Pose.
     """
     import mediapipe as mp
     mp_pose = mp.solutions.pose
@@ -86,7 +123,11 @@ def criar_detector_pose(
     )
 
 
-def landmarks_mediapipe_para_keypoints(landmarks, largura=None, altura=None):
+def landmarks_mediapipe_para_keypoints(
+    landmarks: Any,
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[List[float]]:
     """Converte landmarks do MediaPipe (33 pontos) para o formato [x, y, confiança, z] do COCO (17 pontos).
 
     A confiança permanece no índice 2 (compatível com o formato COCO [x, y, conf]); a profundidade
@@ -95,6 +136,14 @@ def landmarks_mediapipe_para_keypoints(landmarks, largura=None, altura=None):
     para as coordenadas de pixel da imagem. O MediaPipe expressa z aproximadamente na mesma escala
     de x, por isso z é escalado pela largura para manter os eixos X, Y e Z comparáveis.
     Se os landmarks já estiverem no formato COCO (17 pontos), retorna-os diretamente (sem z -> fallback 2D).
+
+    Args:
+        landmarks: Lista de 33 landmarks do MediaPipe ou lista pré-existente de keypoints.
+        largura: Largura da imagem em pixels para desnormalização (opcional).
+        altura: Altura da imagem em pixels para desnormalização (opcional).
+
+    Returns:
+        Lista de 17 keypoints no formato [x, y, confianca, z].
     """
     if len(landmarks) == 17 and isinstance(landmarks[0], (list, tuple)) and not hasattr(landmarks[0], 'x'):
         return landmarks
@@ -111,10 +160,18 @@ def landmarks_mediapipe_para_keypoints(landmarks, largura=None, altura=None):
     return kps
 
 
-def selecionar_melhor_lado(keypoints_data, lados_config):
+def selecionar_melhor_lado(
+    keypoints_data: Sequence[Sequence[float]],
+    lados_config: Dict[str, Sequence[int]]
+) -> Tuple[Optional[str], Optional[Sequence[int]]]:
     """Seleciona o lado ('esq' ou 'dir') que apresenta maior grau de confiança visual.
 
-    Retorna (melhor_lado, indices) ou (None, None) se a visibilidade for insuficiente.
+    Args:
+        keypoints_data: Dados dos keypoints articulares no formato [x, y, conf, ...].
+        lados_config: Dicionário associando identificador de lado aos índices anatômicos.
+
+    Returns:
+        Tupla (melhor_lado, indices) ou (None, None) se a visibilidade for insuficiente.
     """
     melhor_lado = None
     maior_confianca = 0
@@ -135,10 +192,22 @@ def selecionar_melhor_lado(keypoints_data, lados_config):
     return melhor_lado, indices
 
 
-def calcular_amplitude_movimento(keypoints_data, config_exercicio, melhor_lado, filtros=None):
+def calcular_amplitude_movimento(
+    keypoints_data: Sequence[Sequence[float]],
+    config_exercicio: Dict[str, Any],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[int, float, Tuple[Tuple[float, ...], Tuple[float, ...], Tuple[float, ...]]]:
     """Calcula o ângulo articular do movimento principal e a porcentagem de execução (0-100%).
 
-    Retorna (porc, angulo_suave, (p1, p2, p3)).
+    Args:
+        keypoints_data: Dados dos keypoints articulares no frame atual.
+        config_exercicio: Dicionário com a configuração biomecânica do exercício.
+        melhor_lado: Lado anatômico com maior visibilidade selecionado ('esq' ou 'dir').
+        filtros: Dicionário com filtros de suavização de amplitude (opcional).
+
+    Returns:
+        Tupla contendo (porcentagem, angulo_suave, (ponto1, ponto2, ponto3)).
     """
     p1_idx, p2_idx, p3_idx = config_exercicio["lados"][melhor_lado]
     p1 = _pt(keypoints_data[p1_idx])
@@ -153,10 +222,22 @@ def calcular_amplitude_movimento(keypoints_data, config_exercicio, melhor_lado, 
     return porc, angulo_suave, (p1, p2, p3)
 
 
-def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, filtros=None):
+def analisar_seguranca_postura(
+    keypoints_data: Sequence[Sequence[float]],
+    config_exercicio: Dict[str, Any],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], ...]], Optional[float]]:
     """Avalia o alinhamento corporal e a segurança da postura segundo a configuração do exercício.
 
-    Retorna (postura_segura, coords_postura, angulo_seg_suave).
+    Args:
+        keypoints_data: Dados de keypoints articulares no frame atual.
+        config_exercicio: Dicionário com configurações e regras do exercício.
+        melhor_lado: Lado anatômico com maior visibilidade selecionado ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_seguranca_suavizado).
     """
     postura_segura = True
     coords_postura = None
@@ -233,8 +314,21 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
     return postura_segura, coords_postura, angulo_seg_suave
 
 
-def extrair_coordenadas_bracos(keypoints_data, config_exercicio, melhor_lado):
-    """Extrai coordenadas dos braços para visualização no frame."""
+def extrair_coordenadas_bracos(
+    keypoints_data: Sequence[Sequence[float]],
+    config_exercicio: Dict[str, Any],
+    melhor_lado: str
+) -> Optional[Tuple[Tuple[float, ...], ...]]:
+    """Extrai coordenadas dos braços para visualização no frame.
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        config_exercicio: Dicionário com mapeamento anatômico do exercício.
+        melhor_lado: Lado de melhor enquadramento ('esq' ou 'dir').
+
+    Returns:
+        Tupla com as coordenadas dos pontos articulares dos braços ou None.
+    """
     if not config_exercicio.get("bracos"):
         return None
 
@@ -247,10 +341,16 @@ def extrair_coordenadas_bracos(keypoints_data, config_exercicio, melhor_lado):
     return None
 
 
-def calcular_assimetria(keypoints_data):
+def calcular_assimetria(
+    keypoints_data: Sequence[Sequence[float]]
+) -> Tuple[Optional[float], Optional[float], bool]:
     """Extrai os dois cotovelos em simultâneo no formato COCO e calcula a assimetria.
 
-    Retorna (angulo_esq, angulo_dir, alerta_assimetria).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+
+    Returns:
+        Tupla (angulo_esq, angulo_dir, alerta_assimetria).
     """
     indices = BRACO_ESQ + BRACO_DIR
     if any(keypoints_data[i][2] < 0.5 for i in indices):
@@ -264,11 +364,18 @@ def calcular_assimetria(keypoints_data):
     return angulo_esq, angulo_dir, alerta
 
 
-def verificar_assimetria_bracos(landmarks_ou_keypoints):
+def verificar_assimetria_bracos(
+    landmarks_ou_keypoints: Any
+) -> Tuple[bool, float, Optional[float], Optional[float]]:
     """Verifica se há assimetria muscular excessiva (> 25 graus) entre o braço esquerdo e direito.
 
     Suporta landmarks originais do MediaPipe (11, 13, 15 / 12, 14, 16) ou COCO.
-    Retorna (assimetria_detectada, diferenca, angulo_esq, angulo_dir).
+
+    Args:
+        landmarks_ou_keypoints: Coleção de landmarks do MediaPipe ou lista de keypoints.
+
+    Returns:
+        Tupla (assimetria_detectada, diferenca_angular, angulo_esq, angulo_dir).
     """
     # Se receber 33 landmarks do MediaPipe
     if len(landmarks_ou_keypoints) >= 33:
@@ -277,7 +384,7 @@ def verificar_assimetria_bracos(landmarks_ou_keypoints):
         if any(coords_confs[idx][1] <= 0.5 for idx in indices_bracos):
             return False, 0.0, None, None
 
-        def _xyz(idx):
+        def _xyz(idx: int) -> Tuple[float, ...]:
             (x, y), _ = coords_confs[idx]
             return (x, y, _obter_z(landmarks_ou_keypoints[idx]))
 
@@ -304,7 +411,10 @@ def verificar_assimetria_bracos(landmarks_ou_keypoints):
     return assimetria_detectada, diferenca, angulo_esq, angulo_dir
 
 
-def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
+def validar_postura_prancha(
+    landmarks_ou_keypoints: Any,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Optional[Tuple[bool, float, str, Tuple[Tuple[float, ...], Tuple[float, ...], Tuple[float, ...]]]]:
     """Valida a postura da Prancha Isométrica baseando-se no ângulo Ombro-Quadril-Tornozelo.
 
     Suporta landmarks originais do MediaPipe (33 pontos) ou formato COCO (17 pontos).
@@ -312,7 +422,12 @@ def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
     - Se o ângulo for >= 160°, postura correta (True).
     - Se o ângulo for < 160°, postura incorreta (False, quadril caiu).
 
-    Retorna (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)) ou None se visibilidade insuficiente.
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo instâncias de FiltroSuavizacao (opcional).
+
+    Returns:
+        Tupla (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)) ou None se insuficiente.
     """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
     lados_prancha = {"esq": (5, 11, 15), "dir": (6, 12, 16)}
@@ -332,11 +447,22 @@ def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
     return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)
 
 
-def validar_postura_remada(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_remada(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a inclinação do tronco na Remada Curvada (Ombro-Quadril vs vertical).
 
     Garante que as costas não arredondem (> 75°) e que o tronco mantenha inclinação segura (>= 30°).
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     s1_idx = 5 if melhor_lado == "esq" else 6   # Ombro
     s2_idx = 11 if melhor_lado == "esq" else 12 # Quadril
@@ -357,11 +483,22 @@ def validar_postura_remada(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_supino(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_supino(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a abertura dos cotovelos no Supino com Halteres (Quadril-Ombro-Cotovelo).
 
     Garante que os cotovelos não abram a mais de 90° em relação ao tronco para proteger os ombros.
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
     o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
@@ -383,11 +520,22 @@ def validar_postura_supino(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_elevacao_lateral(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a altura dos braços na Elevação Lateral (Quadril-Ombro-Cotovelo).
 
     Garante que os braços não passem da linha horizontal dos ombros (> 95°).
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
     o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
@@ -409,11 +557,22 @@ def validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_elevacao_pelvica(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida o alinhamento da extensão na Elevação Pélvica (Ombro-Quadril-Joelho).
 
     Garante que não ocorra hiperextensão da coluna lombar no topo (> 185°).
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     o_idx = 5 if melhor_lado == "esq" else 6    # Ombro
     q_idx = 11 if melhor_lado == "esq" else 12  # Quadril
@@ -435,12 +594,23 @@ def validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_sumo(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
+def validar_postura_sumo(
+    landmarks_ou_keypoints: Any,
+    melhor_lado: Optional[str] = None,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a postura do Agachamento Sumô verificando a largura da base dos pés.
 
     Regra do Sumô: A distância entre os tornozelos (MediaPipe 27 e 28 / COCO 15 e 16)
     deve ser maior que a distância entre os ombros (MediaPipe 11 e 12 / COCO 5 e 6).
-    Retorna (postura_segura, coords_postura, diferenca_largura).
+
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        melhor_lado: Lado anatômico preferencial (opcional).
+        filtros: Dicionário contendo filtros de suavização (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, diferenca_largura).
     """
     if len(landmarks_ou_keypoints) >= 33:
         p_oe, conf_oe = _obter_coord_conf(landmarks_ou_keypoints[11])
@@ -467,12 +637,23 @@ def validar_postura_sumo(landmarks_ou_keypoints, melhor_lado=None, filtros=None)
     return postura_segura, coords_postura, diferenca
 
 
-def validar_barra_fixa(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
+def validar_barra_fixa(
+    landmarks_ou_keypoints: Any,
+    melhor_lado: Optional[str] = None,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a conclusão da repetição na Barra Fixa baseando-se no alinhamento vertical.
 
     Regra da Barra Fixa: O nariz ou boca (landmarks 0 a 2) deve ultrapassar no eixo Y
     a altura dos pulsos (MediaPipe 15 e 16 / COCO 9 e 10) no topo do movimento.
-    Retorna (queixo_acima, coords_visual, diferenca_y).
+
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        melhor_lado: Lado anatômico preferencial (opcional).
+        filtros: Dicionário contendo filtros de suavização (opcional).
+
+    Returns:
+        Tupla (queixo_acima, coords_visual, diferenca_y).
     """
     if len(landmarks_ou_keypoints) >= 33:
         p_nariz, conf_n = _obter_coord_conf(landmarks_ou_keypoints[0])
@@ -502,13 +683,22 @@ def validar_barra_fixa(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
     return queixo_acima, coords_visual, diferenca_y
 
 
-def validar_postura_prancha_lateral(landmarks_ou_keypoints, filtros=None):
+def validar_postura_prancha_lateral(
+    landmarks_ou_keypoints: Any,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Optional[Tuple[bool, float, str, Tuple[Tuple[float, ...], Tuple[float, ...], Tuple[float, ...]]]]:
     """Valida a postura da Prancha Lateral baseando-se no ângulo Ombro-Quadril-Tornozelo.
 
     Regra da Prancha Lateral:
     - Se o ângulo for >= 160°, postura correta (True).
     - Se o ângulo for < 160°, postura incorreta (False, quadril caiu lateralmente).
-    Retorna (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)) ou None se visibilidade insuficiente.
+
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo filtros de suavização (opcional).
+
+    Returns:
+        Tupla (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)) ou None se insuficiente.
     """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
     lados_prancha = {"esq": (5, 11, 15), "dir": (6, 12, 16)}
@@ -528,11 +718,22 @@ def validar_postura_prancha_lateral(landmarks_ou_keypoints, filtros=None):
     return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3)
 
 
-def validar_postura_elevacao_frontal(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_elevacao_frontal(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a estabilidade do tronco na Elevação Frontal (Ombro-Quadril-Tornozelo).
 
     Garante que o tronco não balance para trás (< 165°).
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     o_idx = 5 if melhor_lado == "esq" else 6
     q_idx = 11 if melhor_lado == "esq" else 12
@@ -554,11 +755,22 @@ def validar_postura_elevacao_frontal(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_triceps_testa(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_triceps_testa(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida o alinhamento dos braços no Tríceps Testa (Quadril-Ombro-Cotovelo).
 
     Garante que os cotovelos permaneçam travados e alinhados (ângulo <= 110°).
-    Retorna (postura_segura, coords_postura, angulo_suave).
+
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12
     o_idx = 5 if melhor_lado == "esq" else 6
@@ -580,10 +792,20 @@ def validar_postura_triceps_testa(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_crucifixo(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_crucifixo(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida que os cotovelos não hiperestendam no Crucifixo (Ombro-Cotovelo-Pulso <= 165°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     o_idx = 5 if melhor_lado == "esq" else 6
     c_idx = 7 if melhor_lado == "esq" else 8
@@ -605,10 +827,20 @@ def validar_postura_crucifixo(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_stiff_unilateral(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_stiff_unilateral(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a inclinação lombar no Stiff Unilateral (Ombro-Quadril vs vertical <= 75°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     s1_idx = 5 if melhor_lado == "esq" else 6
     s2_idx = 11 if melhor_lado == "esq" else 12
@@ -629,10 +861,20 @@ def validar_postura_stiff_unilateral(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_panturrilha(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_panturrilha(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a extensão dos joelhos na Panturrilha em Pé (Quadril-Joelho-Tornozelo >= 160°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12
     j_idx = 13 if melhor_lado == "esq" else 14
@@ -654,10 +896,20 @@ def validar_postura_panturrilha(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_bulgaro(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_bulgaro(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a inclinação do tronco no Agachamento Búlgaro (Ombro-Quadril vs vertical <= 45°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     s1_idx = 5 if melhor_lado == "esq" else 6
     s2_idx = 11 if melhor_lado == "esq" else 12
@@ -678,10 +930,20 @@ def validar_postura_bulgaro(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_encolhimento(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_encolhimento(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a postura ereta no Encolhimento de Ombros (Ombro-Quadril vs vertical <= 20°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     s1_idx = 5 if melhor_lado == "esq" else 6
     s2_idx = 11 if melhor_lado == "esq" else 12
@@ -702,10 +964,22 @@ def validar_postura_encolhimento(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def calcular_calorias(tempo_segundos, met, peso_kg=70.0):
+def calcular_calorias(
+    tempo_segundos: float,
+    met: float,
+    peso_kg: float = 70.0
+) -> float:
     """Calcula a estimativa de gasto calórico (kcal) a partir do MET e da duração.
 
     Fórmula: calorias = (tempo_segundos / 3600) * met * peso_kg
+
+    Args:
+        tempo_segundos: Duração da execução do exercício em segundos.
+        met: Equivalente metabólico da tarefa (MET) do exercício.
+        peso_kg: Peso corporal do utilizador em quilogramas (padrão: 70.0).
+
+    Returns:
+        Gasto calórico estimado em quilocalorias (kcal) arredondado a 2 casas decimais.
     """
     if tempo_segundos <= 0 or met <= 0 or peso_kg <= 0:
         return 0.0
@@ -713,11 +987,18 @@ def calcular_calorias(tempo_segundos, met, peso_kg=70.0):
     return round(calorias, 2)
 
 
-def verificar_fora_enquadramento(keypoints_data, config_exercicio):
-    """Verifica se landmarks existem e se a visibilidade (confiança) dos pontos principais
-    do exercício atual é inferior a 0.3.
+def verificar_fora_enquadramento(
+    keypoints_data: Any,
+    config_exercicio: Dict[str, Any]
+) -> bool:
+    """Verifica se landmarks existem e se a visibilidade dos pontos principais é < 0.3.
 
-    Retorna True se o usuário saiu do enquadramento ou não foi detectado, False se visível.
+    Args:
+        keypoints_data: Dados de keypoints ou landmarks no frame atual.
+        config_exercicio: Dicionário de configuração com os lados e articulações alvo.
+
+    Returns:
+        True se o usuário saiu do enquadramento ou não foi detectado, False caso contrário.
     """
     if keypoints_data is None or len(keypoints_data) == 0:
         return True
@@ -750,10 +1031,20 @@ def verificar_fora_enquadramento(keypoints_data, config_exercicio):
     return not lado_valido
 
 
-def validar_postura_abdominal_infra(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_abdominal_infra(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a postura no Abdominal Infra (joelhos estendidos >= 130°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12
     j_idx = 13 if melhor_lado == "esq" else 14
@@ -775,10 +1066,20 @@ def validar_postura_abdominal_infra(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_remada_alta(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_remada_alta(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a postura ereta na Remada Alta (Ombro-Quadril vs vertical <= 25°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     s1_idx = 5 if melhor_lado == "esq" else 6
     s2_idx = 11 if melhor_lado == "esq" else 12
@@ -799,10 +1100,20 @@ def validar_postura_remada_alta(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_bom_dia(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_bom_dia(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida as pernas retas no exercício Bom Dia (Quadril-Joelho-Tornozelo >= 150°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12
     j_idx = 13 if melhor_lado == "esq" else 14
@@ -824,10 +1135,20 @@ def validar_postura_bom_dia(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_triceps_coice(keypoints_data, melhor_lado, filtros=None):
+def validar_postura_triceps_coice(
+    keypoints_data: Sequence[Sequence[float]],
+    melhor_lado: str,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Tuple[bool, Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]], Optional[float]]:
     """Valida a altura do cotovelo no Tríceps Coice (Quadril-Ombro-Cotovelo >= 25°).
 
-    Retorna (postura_segura, coords_postura, angulo_suave).
+    Args:
+        keypoints_data: Keypoints articulares detectados no frame.
+        melhor_lado: Lado anatômico com maior visibilidade ('esq' ou 'dir').
+        filtros: Dicionário de filtros de postura (opcional).
+
+    Returns:
+        Tupla (postura_segura, coords_postura, angulo_suave).
     """
     q_idx = 11 if melhor_lado == "esq" else 12
     o_idx = 5 if melhor_lado == "esq" else 6
@@ -849,10 +1170,18 @@ def validar_postura_triceps_coice(keypoints_data, melhor_lado, filtros=None):
     return postura_segura, coords_postura, angulo_suave
 
 
-def validar_postura_agachamento_isometrico(landmarks_ou_keypoints, filtros=None):
+def validar_postura_agachamento_isometrico(
+    landmarks_ou_keypoints: Any,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Optional[Tuple[bool, float, str, Tuple[Tuple[float, ...], Tuple[float, ...], Tuple[float, ...]], str]]:
     """Valida a postura do Agachamento Isométrico (ângulo Joelho ~90°: entre 75° e 105°).
 
-    Retorna (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao) ou None.
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo filtros de amplitude (opcional).
+
+    Returns:
+        Tupla (postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao) ou None.
     """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
     lados_joelho = {"esq": (11, 13, 15), "dir": (12, 14, 16)}
@@ -881,11 +1210,20 @@ def validar_postura_agachamento_isometrico(landmarks_ou_keypoints, filtros=None)
     return postura_correta, angulo_suave, melhor_lado, (p1, p2, p3), msg_correcao
 
 
-def validar_polichinelo(landmarks_ou_keypoints, filtros=None):
+def validar_polichinelo(
+    landmarks_ou_keypoints: Any,
+    filtros: Optional[Dict[str, Any]] = None
+) -> Optional[Tuple[int, bool, Tuple[Tuple[float, ...], Tuple[float, ...]], Tuple[Tuple[float, ...], Tuple[float, ...]], str]]:
     """Calcula porcentagem de execução e validação do Polichinelo.
 
     Lógica mista: braços sobem no eixo Y e pernas abrem na distância dos tornozelos.
-    Retorna (porc, postura_segura, coords_bracos, coords_pernas, msg_erro) ou None.
+
+    Args:
+        landmarks_ou_keypoints: Landmarks do MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo filtros de amplitude (opcional).
+
+    Returns:
+        Tupla (porc, postura_segura, coords_bracos, coords_pernas, msg_erro) ou None se invisível.
     """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks_ou_keypoints)
     pontos_obrigatorios = [5, 6, 9, 10, 11, 12, 15, 16]
@@ -928,12 +1266,20 @@ def validar_polichinelo(landmarks_ou_keypoints, filtros=None):
     return porc, postura_segura, coords_bracos, coords_pernas, msg_erro
 
 
-def verificar_fadiga(tempos_repeticoes):
+def verificar_fadiga(
+    tempos_repeticoes: List[float]
+) -> bool:
     """Verifica se há fadiga muscular pela desaceleração das repetições.
 
     Se houver pelo menos 4 repetições registadas, calcula o tempo médio das 3 primeiras
     (ritmo base). Se a última repetição demorar mais de 1.6x (60% mais lenta) do que
     o ritmo base, retorna True (fadiga detetada). Caso contrário, retorna False.
+
+    Args:
+        tempos_repeticoes: Lista contendo as durações em segundos das repetições concluídas.
+
+    Returns:
+        True se a última repetição for > 1.6x o ritmo base das 3 primeiras repetições.
     """
     if not tempos_repeticoes or len(tempos_repeticoes) < 4:
         return False

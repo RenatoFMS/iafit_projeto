@@ -7,6 +7,7 @@ os contadores de repetição e tempo isométrico.
 """
 
 import time
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from core.config_exercicios import EXERCICIOS
 from core.voz_client import falar
 from core.analise_biomecanica import (
@@ -61,25 +62,40 @@ class GerenciadorCalibracao:
     alta confiança (> 0.7) durante um período contínuo de 1 a 2 segundos (padrão: 1.5s).
     """
 
-    def __init__(self, duracao_minima=1.5, limiar_conf=0.7):
-        self.duracao_minima = duracao_minima
-        self.limiar_conf = limiar_conf
-        self.estado = "Calibração"
-        self.tempo_inicio_visivel = None
+    def __init__(self, duracao_minima: float = 1.5, limiar_conf: float = 0.7) -> None:
+        """Inicializa o gerenciador de calibração.
 
-    def resetar(self):
+        Args:
+            duracao_minima: Tempo em segundos de visibilidade contínua para calibrar.
+            limiar_conf: Confiança mínima necessária nos landmarks principais.
+        """
+        self.duracao_minima: float = duracao_minima
+        self.limiar_conf: float = limiar_conf
+        self.estado: str = "Calibração"
+        self.tempo_inicio_visivel: Optional[float] = None
+
+    def resetar(self) -> None:
         """Reinicia o estado para 'Calibração' e limpa o tempo acumulado."""
         self.estado = "Calibração"
         self.tempo_inicio_visivel = None
 
-    def limpar(self):
+    def limpar(self) -> None:
         """Compatibilidade com o protocolo de filtros do IAFit."""
         self.resetar()
 
-    def atualizar(self, keypoints_data, config_exercicio):
+    def atualizar(
+        self,
+        keypoints_data: Any,
+        config_exercicio: Dict[str, Any]
+    ) -> Tuple[str, bool, int]:
         """Avalia os keypoints e atualiza o estado da máquina de calibração.
 
-        Retorna (estado, pronto_para_treino, progresso_porc).
+        Args:
+            keypoints_data: Dados dos keypoints articulares no frame atual.
+            config_exercicio: Configuração biomecânica do exercício.
+
+        Returns:
+            Tupla (estado, pronto_para_treino, progresso_porc).
         """
         if self.estado == "Treinando":
             return self.estado, True, 100
@@ -104,8 +120,15 @@ class GerenciadorCalibracao:
 _calibrador_global = GerenciadorCalibracao()
 
 
-def obter_calibrador(filtros):
-    """Obtém ou instancia o gerenciador de calibração associado aos filtros ou global."""
+def obter_calibrador(filtros: Optional[Dict[str, Any]]) -> GerenciadorCalibracao:
+    """Obtém ou instancia o gerenciador de calibração associado aos filtros ou global.
+
+    Args:
+        filtros: Dicionário de filtros de memória da sessão (opcional).
+
+    Returns:
+        Instância ativa de GerenciadorCalibracao.
+    """
     if filtros and isinstance(filtros, dict):
         if 'calibracao' not in filtros:
             filtros['calibracao'] = GerenciadorCalibracao()
@@ -113,8 +136,19 @@ def obter_calibrador(filtros):
     return _calibrador_global
 
 
-def obter_landmarks_principais(keypoints_data, config_exercicio):
-    """Identifica os índices dos landmarks COCO fundamentais para o exercício atual."""
+def obter_landmarks_principais(
+    keypoints_data: Sequence[Sequence[float]],
+    config_exercicio: Dict[str, Any]
+) -> List[int]:
+    """Identifica os índices dos landmarks COCO fundamentais para o exercício atual.
+
+    Args:
+        keypoints_data: Dados dos keypoints articulares detectados no frame.
+        config_exercicio: Dicionário de configuração do exercício atual.
+
+    Returns:
+        Lista com os índices anatômicos primários necessários para o exercício.
+    """
     if not keypoints_data or len(keypoints_data) < 17:
         return []
 
@@ -139,8 +173,21 @@ def obter_landmarks_principais(keypoints_data, config_exercicio):
     return indices
 
 
-def _verificar_confianca_landmarks(keypoints_data, config_exercicio, limiar_conf=0.7):
-    """Verifica se todos os landmarks principais estão visíveis com confiança > limiar_conf."""
+def _verificar_confianca_landmarks(
+    keypoints_data: Sequence[Sequence[float]],
+    config_exercicio: Dict[str, Any],
+    limiar_conf: float = 0.7
+) -> bool:
+    """Verifica se todos os landmarks principais estão visíveis com confiança > limiar_conf.
+
+    Args:
+        keypoints_data: Dados dos keypoints articulares detectados no frame.
+        config_exercicio: Dicionário de configuração do exercício.
+        limiar_conf: Limiar mínimo de confiança exigido (padrão: 0.7).
+
+    Returns:
+        True se todos os pontos chave tiverem confiança acima do limiar, False caso contrário.
+    """
     if not keypoints_data or len(keypoints_data) < 17:
         return False
 
@@ -158,8 +205,23 @@ def _verificar_confianca_landmarks(keypoints_data, config_exercicio, limiar_conf
     return True
 
 
-def _gerar_resultado_calibracao(keypoints_data, config_exercicio, progresso, filtros):
-    """Gera o dicionário de resultado no frame durante o estado de Calibração."""
+def _gerar_resultado_calibracao(
+    keypoints_data: Any,
+    config_exercicio: Dict[str, Any],
+    progresso: int,
+    filtros: Optional[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Gera o dicionário de resultado no frame durante o estado de Calibração.
+
+    Args:
+        keypoints_data: Keypoints articulares no frame atual.
+        config_exercicio: Dicionário de configuração do exercício atual.
+        progresso: Porcentagem de conclusão da calibração (0 a 100).
+        filtros: Dicionário contendo instâncias de contadores e cronômetros.
+
+    Returns:
+        Dicionário formatado com os dados visuais do estado de calibração.
+    """
     contador = filtros.get('repeticoes', {}).get('total') if filtros else None
     cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
 
@@ -207,7 +269,7 @@ def _gerar_resultado_calibracao(keypoints_data, config_exercicio, progresso, fil
     }
 
 
-def resetar_cooldown_voz():
+def resetar_cooldown_voz() -> None:
     """Reinicia o cooldown dos alertas de voz, fadiga e calibração."""
     global ultimo_aviso, ultimo_aviso_fadiga
     ultimo_aviso = 0
@@ -215,8 +277,16 @@ def resetar_cooldown_voz():
     _calibrador_global.resetar()
 
 
-def _executar_aviso_voz(mensagem, cooldown=4):
-    """Aciona aviso sonoro respeitando a janela de cooldown."""
+def _executar_aviso_voz(mensagem: str, cooldown: float = 4.0) -> bool:
+    """Aciona aviso sonoro respeitando a janela de cooldown.
+
+    Args:
+        mensagem: Texto falado a ser emitido pelo sintetizador.
+        cooldown: Intervalo mínimo em segundos entre avisos sonoros (padrão: 4.0).
+
+    Returns:
+        True se o áudio foi acionado, False caso esteja dentro do intervalo de cooldown.
+    """
     global ultimo_aviso
     agora = time.time()
     if agora - ultimo_aviso > cooldown:
@@ -226,8 +296,21 @@ def _executar_aviso_voz(mensagem, cooldown=4):
     return False
 
 
-def _executar_aviso_fadiga(mensagem="Força, não desista, mantenha o ritmo!", cooldown_fadiga=10, cooldown_global=4):
-    """Aciona aviso sonoro de incentivo à fadiga respeitando o cooldown específico (10s) e global (4s)."""
+def _executar_aviso_fadiga(
+    mensagem: str = "Força, não desista, mantenha o ritmo!",
+    cooldown_fadiga: float = 10.0,
+    cooldown_global: float = 4.0
+) -> bool:
+    """Aciona aviso sonoro de incentivo à fadiga respeitando o cooldown específico (10s) e global (4s).
+
+    Args:
+        mensagem: Frase motivacional a ser falada.
+        cooldown_fadiga: Cooldown específico para alertas de fadiga (padrão: 10.0s).
+        cooldown_global: Cooldown global para qualquer aviso sonoro (padrão: 4.0s).
+
+    Returns:
+        True se o aviso motivacional foi disparado, False caso contrário.
+    """
     global ultimo_aviso, ultimo_aviso_fadiga
     agora = time.time()
     if agora - ultimo_aviso_fadiga > cooldown_fadiga and agora - ultimo_aviso > cooldown_global:
@@ -238,10 +321,22 @@ def _executar_aviso_fadiga(mensagem="Força, não desista, mantenha o ritmo!", c
     return False
 
 
-def processar_exercicio(keypoints_data, config_exercicio, filtros):
+def processar_exercicio(
+    keypoints_data: Any,
+    config_exercicio: Dict[str, Any],
+    filtros: Optional[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
     """Processa a execução de um exercício dinâmico ou isométrico.
 
     Orquestra a análise biomecânica, contagem de repetições e feedback sonoro.
+
+    Args:
+        keypoints_data: Keypoints COCO ou landmarks MediaPipe no frame atual.
+        config_exercicio: Dicionário com todas as configurações biomecânicas do exercício.
+        filtros: Dicionário com contadores, cronômetros e instâncias de suavização.
+
+    Returns:
+        Lista com dicionários de telemetria e renderização visual para o frame.
     """
     global ultimo_aviso
 
@@ -364,14 +459,44 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
     }]
 
 
-def processar_desenvolvimento_ombro(landmarks, filtros, largura=None, altura=None):
-    """Desenvolvimento de Ombro (70° -> 160°) com MediaPipe."""
+def processar_desenvolvimento_ombro(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Desenvolvimento de Ombro (70° -> 160°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["4"], filtros)
 
 
-def processar_rosca_biceps(landmarks, filtros, largura=None, altura=None):
-    """Rosca Bíceps (160° -> 40°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_rosca_biceps(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Rosca Bíceps (160° -> 40°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -380,8 +505,23 @@ def processar_rosca_biceps(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["1"], filtros)
 
 
-def processar_flexao(landmarks, filtros, largura=None, altura=None):
-    """Flexão de Braço (160° -> 80°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_flexao(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Flexão de Braço (160° -> 80°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -390,32 +530,107 @@ def processar_flexao(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["3"], filtros)
 
 
-def processar_abdominal(landmarks, filtros, largura=None, altura=None):
-    """Abdominal Supra (150° -> 70°) com MediaPipe."""
+def processar_abdominal(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Abdominal Supra (150° -> 70°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["5"], filtros)
 
 
-def processar_agachamento(landmarks, filtros, largura=None, altura=None):
-    """Agachamento (170° -> 80°) com MediaPipe."""
+def processar_agachamento(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Agachamento (170° -> 80°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["2"], filtros)
 
 
-def processar_afundo(landmarks, filtros, largura=None, altura=None):
-    """Afundo / Lunge (160° -> 90°) com MediaPipe."""
+def processar_afundo(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Afundo / Lunge (160° -> 90°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["6"], filtros)
 
 
-def processar_stiff(landmarks, filtros, largura=None, altura=None):
-    """Stiff (170° -> 80°) com MediaPipe."""
+def processar_stiff(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Stiff (170° -> 80°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["7"], filtros)
 
 
-def processar_prancha(landmarks, filtros, largura=None, altura=None):
-    """Prancha Isométrica (ângulo Ombro-Quadril-Tornozelo >= 160°)."""
+def processar_prancha(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Prancha Isométrica (ângulo Ombro-Quadril-Tornozelo >= 160°).
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("8", {})
 
@@ -488,8 +703,23 @@ def processar_prancha(landmarks, filtros, largura=None, altura=None):
     }]
 
 
-def processar_remada_curvada(landmarks, filtros, largura=None, altura=None):
-    """Remada Curvada com MediaPipe e deteção de assimetria dos braços."""
+def processar_remada_curvada(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Remada Curvada com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -498,8 +728,23 @@ def processar_remada_curvada(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["9"], filtros)
 
 
-def processar_supino(landmarks, filtros, largura=None, altura=None):
-    """Supino com Halteres com MediaPipe e deteção de assimetria dos braços."""
+def processar_supino(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Supino com Halteres com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -508,20 +753,65 @@ def processar_supino(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["10"], filtros)
 
 
-def processar_elevacao_lateral(landmarks, filtros, largura=None, altura=None):
-    """Elevação Lateral (20° -> 90°) com MediaPipe."""
+def processar_elevacao_lateral(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Elevação Lateral (20° -> 90°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["11"], filtros)
 
 
-def processar_elevacao_pelvica(landmarks, filtros, largura=None, altura=None):
-    """Elevação Pélvica (110° -> 175°) com MediaPipe."""
+def processar_elevacao_pelvica(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Elevação Pélvica (110° -> 175°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["12"], filtros)
 
 
-def processar_mergulho_banco(landmarks, filtros, largura=None, altura=None):
-    """Mergulho no Banco (160° -> 90°) com MediaPipe."""
+def processar_mergulho_banco(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Mergulho no Banco (160° -> 90°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -530,8 +820,23 @@ def processar_mergulho_banco(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["13"], filtros)
 
 
-def processar_rosca_martelo(landmarks, filtros, largura=None, altura=None):
-    """Rosca Martelo (160° -> 40°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_rosca_martelo(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Rosca Martelo (160° -> 40°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -540,8 +845,23 @@ def processar_rosca_martelo(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["14"], filtros)
 
 
-def processar_agachamento_sumo(landmarks, filtros, largura=None, altura=None):
-    """Agachamento Sumô com MediaPipe e validação da largura da base dos pés."""
+def processar_agachamento_sumo(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Agachamento Sumô com MediaPipe e validação da largura da base dos pés.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     postura_ok, _, _ = validar_postura_sumo(landmarks if len(landmarks) >= 33 else keypoints_data)
     if not postura_ok:
@@ -550,8 +870,23 @@ def processar_agachamento_sumo(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["15"], filtros)
 
 
-def processar_barra_fixa(landmarks, filtros, largura=None, altura=None):
-    """Barra Fixa com MediaPipe e validação do queixo acima da barra."""
+def processar_barra_fixa(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Barra Fixa com MediaPipe e validação do queixo acima da barra.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -593,8 +928,23 @@ PROCESSADORES_EXERCICIO = {
 }
 
 
-def processar_triceps_testa(landmarks, filtros, largura=None, altura=None):
-    """Tríceps Testa (160° -> 70°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_triceps_testa(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Tríceps Testa (160° -> 70°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -603,8 +953,23 @@ def processar_triceps_testa(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["17"], filtros)
 
 
-def processar_crucifixo(landmarks, filtros, largura=None, altura=None):
-    """Crucifixo Halteres (150° -> 85°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_crucifixo(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Crucifixo Halteres (150° -> 85°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -613,14 +978,44 @@ def processar_crucifixo(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["18"], filtros)
 
 
-def processar_stiff_unilateral(landmarks, filtros, largura=None, altura=None):
-    """Stiff Unilateral (170° -> 85°) com MediaPipe."""
+def processar_stiff_unilateral(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Stiff Unilateral (170° -> 85°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["19"], filtros)
 
 
-def processar_elevacao_frontal(landmarks, filtros, largura=None, altura=None):
-    """Elevação Frontal (20° -> 90°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_elevacao_frontal(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Elevação Frontal (20° -> 90°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -629,14 +1024,44 @@ def processar_elevacao_frontal(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["20"], filtros)
 
 
-def processar_panturrilha(landmarks, filtros, largura=None, altura=None):
-    """Panturrilha em Pé (90° -> 140°) com MediaPipe."""
+def processar_panturrilha(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Panturrilha em Pé (90° -> 140°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["21"], filtros)
 
 
-def processar_prancha_lateral(landmarks, filtros, largura=None, altura=None):
-    """Prancha Lateral (ângulo Ombro-Quadril-Tornozelo >= 160°)."""
+def processar_prancha_lateral(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Prancha Lateral (ângulo Ombro-Quadril-Tornozelo >= 160°).
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("22", {})
 
@@ -709,14 +1134,44 @@ def processar_prancha_lateral(landmarks, filtros, largura=None, altura=None):
     }]
 
 
-def processar_agachamento_bulgaro(landmarks, filtros, largura=None, altura=None):
-    """Agachamento Búlgaro (170° -> 90°) com MediaPipe."""
+def processar_agachamento_bulgaro(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Agachamento Búlgaro (170° -> 90°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["23"], filtros)
 
 
-def processar_encolhimento(landmarks, filtros, largura=None, altura=None):
-    """Encolhimento de Ombros (170° -> 135°) com MediaPipe e foco no eixo Y."""
+def processar_encolhimento(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Encolhimento de Ombros (170° -> 135°) com MediaPipe e foco no eixo Y.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -737,14 +1192,44 @@ PROCESSADORES_EXERCICIO.update({
 })
 
 
-def processar_abdominal_infra(landmarks, filtros, largura=None, altura=None):
-    """Abdominal Infra (165° -> 85°) com MediaPipe."""
+def processar_abdominal_infra(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Abdominal Infra (165° -> 85°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["25"], filtros)
 
 
-def processar_remada_alta(landmarks, filtros, largura=None, altura=None):
-    """Remada Alta (25° -> 95°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_remada_alta(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Remada Alta (25° -> 95°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -753,14 +1238,44 @@ def processar_remada_alta(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["26"], filtros)
 
 
-def processar_bom_dia(landmarks, filtros, largura=None, altura=None):
-    """Bom Dia (170° -> 95°) com MediaPipe."""
+def processar_bom_dia(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Bom Dia (170° -> 95°) com MediaPipe.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     return processar_exercicio(keypoints_data, EXERCICIOS["27"], filtros)
 
 
-def processar_triceps_coice(landmarks, filtros, largura=None, altura=None):
-    """Tríceps Coice (90° -> 165°) com MediaPipe e deteção de assimetria dos braços."""
+def processar_triceps_coice(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Tríceps Coice (90° -> 165°) com MediaPipe e deteção de assimetria dos braços.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     assimetria, _, _, _ = verificar_assimetria_bracos(landmarks)
     if assimetria:
         _executar_aviso_voz("Equilibre a força dos dois braços")
@@ -769,8 +1284,23 @@ def processar_triceps_coice(landmarks, filtros, largura=None, altura=None):
     return processar_exercicio(keypoints_data, EXERCICIOS["28"], filtros)
 
 
-def processar_agachamento_isometrico(landmarks, filtros, largura=None, altura=None):
-    """Agachamento Isométrico (Wall Sit) com ângulo mantido a ~90°."""
+def processar_agachamento_isometrico(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Agachamento Isométrico (Wall Sit) com ângulo mantido a ~90°.
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("29", {})
 
@@ -844,8 +1374,23 @@ def processar_agachamento_isometrico(landmarks, filtros, largura=None, altura=No
     }]
 
 
-def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
-    """Polichinelo (lógica mista: braços no eixo Y e pernas na distância dos pés)."""
+def processar_polichinelo(
+    landmarks: Any,
+    filtros: Optional[Dict[str, Any]],
+    largura: Optional[int] = None,
+    altura: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Polichinelo (lógica mista: braços no eixo Y e pernas na distância dos pés).
+
+    Args:
+        landmarks: Dados brutos de landmarks MediaPipe ou keypoints COCO.
+        filtros: Dicionário contendo os filtros de suavização e contadores.
+        largura: Largura do frame em pixels para desnormalização de coordenadas (opcional).
+        altura: Altura do frame em pixels para desnormalização de coordenadas (opcional).
+
+    Returns:
+        Lista com dicionários de telemetria e coordenadas para renderização visual.
+    """
     keypoints_data = landmarks_mediapipe_para_keypoints(landmarks, largura, altura)
     config = EXERCICIOS.get("30", {})
 

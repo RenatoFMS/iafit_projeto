@@ -1,3 +1,4 @@
+from typing import Any, Dict
 import time
 import cv2
 import mediapipe as mp
@@ -26,21 +27,26 @@ pose = criar_detector_pose(
 camera = cv2.VideoCapture(FONTE_DE_VIDEO)
 id_atual = "1" 
 
-filtros_memoria = {
+filtros_memoria: Dict[str, Dict[str, Any]] = {
     'amplitude': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
     'postura': {'esq': FiltroSuavizacao(5), 'dir': FiltroSuavizacao(5)},
     'repeticoes': {'total': ContadorRepeticoes()},
     'isometrico': {'total': CronometroIsometrico()}
 }
 
-def resetar_filtros():
+def resetar_filtros() -> None:
+    """Reinicia o histórico de todos os filtros de memória e os cooldowns de áudio."""
     for cat in filtros_memoria.values():
         for filtro in cat.values():
             filtro.limpar()
     resetar_cooldown_voz()
 
-def guardar_treino_atual():
-    """Envia o exercício atual e as suas repetições ou tempo para a nuvem."""
+def guardar_treino_atual() -> None:
+    """Envia o exercício atual e as suas repetições ou tempo para a nuvem.
+
+    Calcula a estimativa de gasto calórico a partir do MET do exercício
+    e armazena os dados da série concluída no Firebase Firestore.
+    """
     config = EXERCICIOS.get(id_atual, {})
     nome_ex = config.get("nome", "Exercício")
     met_ex = config.get("met", 3.0)

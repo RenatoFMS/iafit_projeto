@@ -19,3 +19,4 @@ Testes Bem-Sucedidos: 1
 Testes que Falharam (0 repetições detetadas): 0
 Taxa de Sucesso: 100.0%
 ==================================================
+
