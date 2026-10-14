@@ -88,7 +88,17 @@ def executar_teste(video_path, id_ex, url=None):
     if url is None:
         try:
             with open("dataset_qa/urls_mapeamento.json", "r", encoding="utf-8") as f:
-                url = json.load(f).get(id_str, "N/A")
+                url_data = json.load(f).get(id_str, "N/A")
+                if isinstance(url_data, list):
+                    nome_base = os.path.splitext(os.path.basename(video_path))[0]
+                    partes = nome_base.split("_")
+                    if len(partes) > 1 and partes[1].isdigit():
+                        idx = int(partes[1]) - 1
+                        url = url_data[idx] if 0 <= idx < len(url_data) else (url_data[0] if url_data else "N/A")
+                    else:
+                        url = url_data[0] if url_data else "N/A"
+                else:
+                    url = url_data
         except Exception:
             url = "N/A"
 
@@ -310,10 +320,15 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
         print(f"Aviso: Nenhum ficheiro .mp4 encontrado na diretoria '{pasta_dataset}'.")
         sys.exit(0)
 
-    # Ordenação natural dos arquivos numéricos (ex: 1.mp4, 2.mp4, 10.mp4)
+    # Ordenação natural dos arquivos numéricos (ex: 1.mp4, 9_1.mp4, 10_2.mp4)
     def chave_ordenacao(nome):
         base = os.path.splitext(nome)[0]
-        return (0, int(base)) if base.isdigit() else (1, base)
+        partes = base.split('_')
+        if len(partes) >= 2 and partes[0].isdigit() and partes[1].isdigit():
+            return (0, int(partes[0]), int(partes[1]))
+        if base.isdigit():
+            return (0, int(base), 0)
+        return (1, base, 0)
 
     ficheiros_ordenados = sorted(ficheiros, key=chave_ordenacao)
 
@@ -328,14 +343,30 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
     falhas_detalhes = []
 
     for nome_arquivo in ficheiros_ordenados:
-        id_ex = os.path.splitext(nome_arquivo)[0]
+        nome_sem_ext = os.path.splitext(nome_arquivo)[0]
+        id_ex = nome_sem_ext.split('_')[0]
+        try:
+            indice_video = int(nome_sem_ext.split('_')[1])
+        except (IndexError, ValueError):
+            indice_video = 1
+
         caminho_video = os.path.join(pasta_dataset, nome_arquivo)
 
         if id_ex not in EXERCICIOS:
             print(f"\n[Aviso] Ficheiro '{nome_arquivo}' ignorado: ID '{id_ex}' não existe no catálogo de exercícios.")
             continue
 
-        url_video = mapa_urls.get(str(id_ex), "N/A")
+        url_video = "N/A"
+        urls_exercicio = mapa_urls.get(str(id_ex))
+        if isinstance(urls_exercicio, list):
+            idx_url = indice_video - 1  # Ajustado para base 0
+            if 0 <= idx_url < len(urls_exercicio):
+                url_video = urls_exercicio[idx_url]
+            elif urls_exercicio:
+                url_video = urls_exercicio[0]
+        elif isinstance(urls_exercicio, str):
+            url_video = urls_exercicio
+
         print(f">>> Processando [{id_ex}] {EXERCICIOS[id_ex]['nome']} ({nome_arquivo})...")
         try:
             res = executar_teste(caminho_video, id_ex, url=url_video)

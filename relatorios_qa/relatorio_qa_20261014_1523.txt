@@ -1,0 +1,1348 @@
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=sRNxgCgKxFM
+Nome do Exercício: Agachamento
+Total de Repetições: 1
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=3tiUvOSz52k
+Nome do Exercício: Agachamento
+Total de Repetições: 2
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=XEqk8lJnvCA
+Nome do Exercício: Agachamento
+Total de Repetições: 3
+Erros de Postura contabilizados: 10
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=I83o1EG5wsk
+Nome do Exercício: Agachamento
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=VG3OChxALAY
+Nome do Exercício: Agachamento
+Total de Repetições: 0
+Erros de Postura contabilizados: 6
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 3_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=wPk10l6JdAA
+Nome do Exercício: Flexao de Braco
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 3_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=0SnEH50jEco
+Nome do Exercício: Flexao de Braco
+Total de Repetições: 2
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 3_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=2R7NdtmqguI
+Nome do Exercício: Flexao de Braco
+Total de Repetições: 23
+Erros de Postura contabilizados: 15
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 3_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=UdT-42MtuRk
+Nome do Exercício: Flexao de Braco
+Total de Repetições: 3
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.1 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 3_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=kUMEqd9ekn4
+Nome do Exercício: Flexao de Braco
+Total de Repetições: 1
+Erros de Postura contabilizados: 33
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 4_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=q8qDFKSQ7xE
+Nome do Exercício: Desenvolvimento Ombro
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 4_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=axVz17o7yFM
+Nome do Exercício: Desenvolvimento Ombro
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 4_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=1DXSkd1RDmw
+Nome do Exercício: Desenvolvimento Ombro
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 4_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=MmHTcVK-1tU
+Nome do Exercício: Desenvolvimento Ombro
+Total de Repetições: 1
+Erros de Postura contabilizados: 16
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 4_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=v3xE_Sm0QqM
+Nome do Exercício: Desenvolvimento Ombro
+Total de Repetições: 2
+Erros de Postura contabilizados: 13
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 5_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=mfkfUkj24co
+Nome do Exercício: Abdominal Supra
+Total de Repetições: 0
+Erros de Postura contabilizados: 7
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 5_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=QUx-SQ3nG3o
+Nome do Exercício: Abdominal Supra
+Total de Repetições: 0
+Erros de Postura contabilizados: 10
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 5_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=fJnyhx1BCBI
+Nome do Exercício: Abdominal Supra
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 5_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=h7ld2gplMt0
+Nome do Exercício: Abdominal Supra
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 5_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=jW4584fyVUo
+Nome do Exercício: Abdominal Supra
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 6_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=uwV3Cxwbxh8
+Nome do Exercício: Afundo (Lunge)
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 6_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=1GAW7hz8dOs
+Nome do Exercício: Afundo (Lunge)
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 6_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=l6EitAmgYDU
+Nome do Exercício: Afundo (Lunge)
+Total de Repetições: 5
+Erros de Postura contabilizados: 14
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 6_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YZAZQq3S66A
+Nome do Exercício: Afundo (Lunge)
+Total de Repetições: 0
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 6_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=HMJUsD3_NYg
+Nome do Exercício: Afundo (Lunge)
+Total de Repetições: 0
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 7_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=F8q6ZIizAcY
+Nome do Exercício: Stiff
+Total de Repetições: 5
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 7_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=QmfkBeZQDQc
+Nome do Exercício: Stiff
+Total de Repetições: 0
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 7_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=8gZ_hwtezzQ
+Nome do Exercício: Stiff
+Total de Repetições: 3
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 9_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=Zx12Qvsb3jM
+Nome do Exercício: Remada Curvada
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 9_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=FcRXb6C7myI
+Nome do Exercício: Remada Curvada
+Total de Repetições: 0
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 9_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=0K880Cr1zlw
+Nome do Exercício: Remada Curvada
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 9_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=InPm_ic6Xng
+Nome do Exercício: Remada Curvada
+Total de Repetições: 0
+Erros de Postura contabilizados: 3
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 9_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=1JDNMZuIQP4
+Nome do Exercício: Remada Curvada
+Total de Repetições: 3
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 10_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YiP-Zhk5YMk
+Nome do Exercício: Supino Halteres
+Total de Repetições: 2
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 10_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=fbupGf-T4KM
+Nome do Exercício: Supino Halteres
+Total de Repetições: 1
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 10_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=tDxKGeY-hjQ
+Nome do Exercício: Supino Halteres
+Total de Repetições: 1
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 10_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=JxmTs8k-STw
+Nome do Exercício: Supino Halteres
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 10_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=72UUJVBuT7o
+Nome do Exercício: Supino Halteres
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 11_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=7UTXyZs4Y3k
+Nome do Exercício: Elevacao Lateral
+Total de Repetições: 5
+Erros de Postura contabilizados: 7
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 11_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=W5hRdgwEoEA
+Nome do Exercício: Elevacao Lateral
+Total de Repetições: 5
+Erros de Postura contabilizados: 17
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.0 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 11_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=E9nwq___qow
+Nome do Exercício: Elevacao Lateral
+Total de Repetições: 2
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 11_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=5_Z0aYVlQe8
+Nome do Exercício: Elevacao Lateral
+Total de Repetições: 6
+Erros de Postura contabilizados: 13
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 12_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=5iazLY_OXSg
+Nome do Exercício: Elevacao Pelvica
+Total de Repetições: 1
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 12_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=a5q1PDpxkxo
+Nome do Exercício: Elevacao Pelvica
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 12_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=DnHjZpt76NU
+Nome do Exercício: Elevacao Pelvica
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.0 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 12_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=OWZq0CzmAMQ
+Nome do Exercício: Elevacao Pelvica
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 12_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=svmtfjR1WDM
+Nome do Exercício: Elevacao Pelvica
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 13_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=ASL8QnVrA5U
+Nome do Exercício: Mergulho no Banco
+Total de Repetições: 3
+Erros de Postura contabilizados: 10
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 13_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YkMEIPeu6n0
+Nome do Exercício: Mergulho no Banco
+Total de Repetições: 7
+Erros de Postura contabilizados: 15
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 13_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=jH9RXQjbXqs
+Nome do Exercício: Mergulho no Banco
+Total de Repetições: 5
+Erros de Postura contabilizados: 15
+Fadiga Detetada (Sim/Não): Sim
+Gasto Calórico Estimado: 2.1 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 13_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=X8rEuPt66gA
+Nome do Exercício: Mergulho no Banco
+Total de Repetições: 1
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 13_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=LsIM4qe9Xio
+Nome do Exercício: Mergulho no Banco
+Total de Repetições: 3
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 14_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=RjSiAyPDTqM
+Nome do Exercício: Rosca Martelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 14_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=RBXAfgvtYf0
+Nome do Exercício: Rosca Martelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 6
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 14_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=zXa8yIg1A8I
+Nome do Exercício: Rosca Martelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 14_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=8-pBtXcl_Wk
+Nome do Exercício: Rosca Martelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 14_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=HQ1T3p8Xz3k
+Nome do Exercício: Rosca Martelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 15_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=VG3OChxALAY
+Nome do Exercício: Agachamento Sumo
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 15_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=JPC2E0hvWGI
+Nome do Exercício: Agachamento Sumo
+Total de Repetições: 3
+Erros de Postura contabilizados: 13
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 16_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=1kFlNPQVzfM
+Nome do Exercício: Barra Fixa
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 16_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=2a0AtVdoySo
+Nome do Exercício: Barra Fixa
+Total de Repetições: 0
+Erros de Postura contabilizados: 12
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 16_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=mRNV9wiY-fA
+Nome do Exercício: Barra Fixa
+Total de Repetições: 3
+Erros de Postura contabilizados: 23
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 17_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=H2XdWkUQw9Q
+Nome do Exercício: Triceps Testa
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 17_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=sE8QJxTl1XA
+Nome do Exercício: Triceps Testa
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 17_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=vqyOETWShVk
+Nome do Exercício: Triceps Testa
+Total de Repetições: 1
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 17_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YPKM68fv27U
+Nome do Exercício: Triceps Testa
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 17_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=nXMLLBawP9Q
+Nome do Exercício: Triceps Testa
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 18_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=NB_1mCfIOLU
+Nome do Exercício: Crucifixo Halteres
+Total de Repetições: 2
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 18_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=-OYjchHBJpY
+Nome do Exercício: Crucifixo Halteres
+Total de Repetições: 0
+Erros de Postura contabilizados: 22
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 18_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=at54Dj2Li0g
+Nome do Exercício: Crucifixo Halteres
+Total de Repetições: 1
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 18_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YiP-Zhk5YMk
+Nome do Exercício: Crucifixo Halteres
+Total de Repetições: 2
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 18_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=1j2YCnXXvOA
+Nome do Exercício: Crucifixo Halteres
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 19_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=lLvmwyzqkdk
+Nome do Exercício: Stiff Unilateral
+Total de Repetições: 0
+Erros de Postura contabilizados: 3
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 19_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=EiOBwXWLGeg
+Nome do Exercício: Stiff Unilateral
+Total de Repetições: 4
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.7 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 19_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=8gZ_hwtezzQ
+Nome do Exercício: Stiff Unilateral
+Total de Repetições: 3
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 19_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=F9oIzOyg3cc
+Nome do Exercício: Stiff Unilateral
+Total de Repetições: 3
+Erros de Postura contabilizados: 12
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.1 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 19_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=pZNcXwfGeOI
+Nome do Exercício: Stiff Unilateral
+Total de Repetições: 0
+Erros de Postura contabilizados: 3
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 20_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=XixF3mtsjBs
+Nome do Exercício: Elevacao Frontal
+Total de Repetições: 4
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Sim
+Gasto Calórico Estimado: 1.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 20_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=NgaxBpSFPAI
+Nome do Exercício: Elevacao Frontal
+Total de Repetições: 0
+Erros de Postura contabilizados: 31
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 20_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=gNscV-lh10U
+Nome do Exercício: Elevacao Frontal
+Total de Repetições: 0
+Erros de Postura contabilizados: 12
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 20_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=aCYKuPcIG5w
+Nome do Exercício: Elevacao Frontal
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.3 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 20_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=R3fTquyOUB0
+Nome do Exercício: Elevacao Frontal
+Total de Repetições: 1
+Erros de Postura contabilizados: 37
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 23_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=LT_nelifZ_k
+Nome do Exercício: Agachamento Bulgaro
+Total de Repetições: 1
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 23_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=X-cv9R25xXc
+Nome do Exercício: Agachamento Bulgaro
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 23_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=CnXd8iH4mPk
+Nome do Exercício: Agachamento Bulgaro
+Total de Repetições: 2
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 23_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=-c045mEGiX8
+Nome do Exercício: Agachamento Bulgaro
+Total de Repetições: 0
+Erros de Postura contabilizados: 5
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 24_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=cZLgyI2OKcs
+Nome do Exercício: Encolhimento Ombros
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 24_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=Etsmf_2J1Fg
+Nome do Exercício: Encolhimento Ombros
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.0 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 24_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=YeILDnoeYEk
+Nome do Exercício: Encolhimento Ombros
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 24_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=hkqs7iFRzqE
+Nome do Exercício: Encolhimento Ombros
+Total de Repetições: 0
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 24_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=08W2LHolqho
+Nome do Exercício: Encolhimento Ombros
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 25_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=kfJu2P7RXQU
+Nome do Exercício: Abdominal Infra
+Total de Repetições: 0
+Erros de Postura contabilizados: 8
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.9 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 25_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=WqhD9WOj1EM
+Nome do Exercício: Abdominal Infra
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 25_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=JvAkNvB5ebM
+Nome do Exercício: Abdominal Infra
+Total de Repetições: 0
+Erros de Postura contabilizados: 3
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.0 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 25_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=fN1zziClTfE
+Nome do Exercício: Abdominal Infra
+Total de Repetições: 0
+Erros de Postura contabilizados: 7
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 25_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=lsfYFbfE45o
+Nome do Exercício: Abdominal Infra
+Total de Repetições: 1
+Erros de Postura contabilizados: 3
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.5 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 26_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=keU85-eTrSk
+Nome do Exercício: Remada Alta
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 26_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=-gZ8SgWsLv8
+Nome do Exercício: Remada Alta
+Total de Repetições: 0
+Erros de Postura contabilizados: 7
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 26_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=FHMFJx_Ldzc
+Nome do Exercício: Remada Alta
+Total de Repetições: 0
+Erros de Postura contabilizados: 0
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 26_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=IZRC8euB5J0
+Nome do Exercício: Remada Alta
+Total de Repetições: 0
+Erros de Postura contabilizados: 2
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 26_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=Np4H9N6XBkQ
+Nome do Exercício: Remada Alta
+Total de Repetições: 6
+Erros de Postura contabilizados: 53
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 3.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 30_1.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=alOBaWqwu08
+Nome do Exercício: Polichinelo
+Total de Repetições: 8
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.8 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 30_2.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=ivpCXg996xU
+Nome do Exercício: Polichinelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 1
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 0.6 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 30_3.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=a0wysahSQ7A
+Nome do Exercício: Polichinelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 9
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 4.2 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 30_4.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=9ch2Tl8KjRE
+Nome do Exercício: Polichinelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 21
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 2.4 kcal
+==================================================
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 30_5.mp4
+URL do Vídeo: https://www.youtube.com/watch?v=MO3QtyaiYOU
+Nome do Exercício: Polichinelo
+Total de Repetições: 0
+Erros de Postura contabilizados: 4
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 1.7 kcal
+==================================================
+
+
+==================================================
+             SUMÁRIO TOTAL DE QA
+==================================================
+Total de Vídeos Processados: 106
+Testes Bem-Sucedidos: 42
+Testes que Falharam (0 repetições detetadas): 64
+Taxa de Sucesso: 39.6%
+--------------------------------------------------
+Exercícios com Falha (0 repetições detetadas):
+ - ID 2 - Agachamento (2_4.mp4)
+ - ID 2 - Agachamento (2_5.mp4)
+ - ID 3 - Flexao de Braco (3_1.mp4)
+ - ID 4 - Desenvolvimento Ombro (4_1.mp4)
+ - ID 4 - Desenvolvimento Ombro (4_2.mp4)
+ - ID 4 - Desenvolvimento Ombro (4_3.mp4)
+ - ID 5 - Abdominal Supra (5_1.mp4)
+ - ID 5 - Abdominal Supra (5_2.mp4)
+ - ID 5 - Abdominal Supra (5_3.mp4)
+ - ID 5 - Abdominal Supra (5_4.mp4)
+ - ID 5 - Abdominal Supra (5_5.mp4)
+ - ID 6 - Afundo (Lunge) (6_1.mp4)
+ - ID 6 - Afundo (Lunge) (6_2.mp4)
+ - ID 6 - Afundo (Lunge) (6_4.mp4)
+ - ID 6 - Afundo (Lunge) (6_5.mp4)
+ - ID 7 - Stiff (7_2.mp4)
+ - ID 9 - Remada Curvada (9_1.mp4)
+ - ID 9 - Remada Curvada (9_2.mp4)
+ - ID 9 - Remada Curvada (9_3.mp4)
+ - ID 9 - Remada Curvada (9_4.mp4)
+ - ID 10 - Supino Halteres (10_4.mp4)
+ - ID 10 - Supino Halteres (10_5.mp4)
+ - ID 12 - Elevacao Pelvica (12_2.mp4)
+ - ID 12 - Elevacao Pelvica (12_3.mp4)
+ - ID 12 - Elevacao Pelvica (12_4.mp4)
+ - ID 12 - Elevacao Pelvica (12_5.mp4)
+ - ID 14 - Rosca Martelo (14_1.mp4)
+ - ID 14 - Rosca Martelo (14_2.mp4)
+ - ID 14 - Rosca Martelo (14_3.mp4)
+ - ID 14 - Rosca Martelo (14_4.mp4)
+ - ID 14 - Rosca Martelo (14_5.mp4)
+ - ID 15 - Agachamento Sumo (15_1.mp4)
+ - ID 16 - Barra Fixa (16_1.mp4)
+ - ID 16 - Barra Fixa (16_2.mp4)
+ - ID 17 - Triceps Testa (17_1.mp4)
+ - ID 17 - Triceps Testa (17_2.mp4)
+ - ID 17 - Triceps Testa (17_4.mp4)
+ - ID 17 - Triceps Testa (17_5.mp4)
+ - ID 18 - Crucifixo Halteres (18_2.mp4)
+ - ID 18 - Crucifixo Halteres (18_5.mp4)
+ - ID 19 - Stiff Unilateral (19_1.mp4)
+ - ID 19 - Stiff Unilateral (19_5.mp4)
+ - ID 20 - Elevacao Frontal (20_2.mp4)
+ - ID 20 - Elevacao Frontal (20_3.mp4)
+ - ID 20 - Elevacao Frontal (20_4.mp4)
+ - ID 23 - Agachamento Bulgaro (23_2.mp4)
+ - ID 23 - Agachamento Bulgaro (23_4.mp4)
+ - ID 24 - Encolhimento Ombros (24_1.mp4)
+ - ID 24 - Encolhimento Ombros (24_2.mp4)
+ - ID 24 - Encolhimento Ombros (24_3.mp4)
+ - ID 24 - Encolhimento Ombros (24_4.mp4)
+ - ID 24 - Encolhimento Ombros (24_5.mp4)
+ - ID 25 - Abdominal Infra (25_1.mp4)
+ - ID 25 - Abdominal Infra (25_2.mp4)
+ - ID 25 - Abdominal Infra (25_3.mp4)
+ - ID 25 - Abdominal Infra (25_4.mp4)
+ - ID 26 - Remada Alta (26_1.mp4)
+ - ID 26 - Remada Alta (26_2.mp4)
+ - ID 26 - Remada Alta (26_3.mp4)
+ - ID 26 - Remada Alta (26_4.mp4)
+ - ID 30 - Polichinelo (30_2.mp4)
+ - ID 30 - Polichinelo (30_3.mp4)
+ - ID 30 - Polichinelo (30_4.mp4)
+ - ID 30 - Polichinelo (30_5.mp4)
+==================================================
