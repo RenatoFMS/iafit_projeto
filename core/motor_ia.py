@@ -11,6 +11,7 @@ from core.config_exercicios import EXERCICIOS
 from core.voz_client import falar
 from core.analise_biomecanica import (
     _obter_coord_conf,
+    _pt,
     criar_detector_pose,
     landmarks_mediapipe_para_keypoints,
     selecionar_melhor_lado,
@@ -52,11 +53,166 @@ ultimo_aviso = 0
 ultimo_aviso_fadiga = 0
 
 
+class GerenciadorCalibracao:
+    """Gerencia a fase inicial de calibração do utilizador antes do início da contagem.
+
+    O motor inicia obrigatoriamente no estado 'Calibração' e só transita para 'Treinando'
+    quando os landmarks anatómicos principais do exercício atual estiverem visíveis com
+    alta confiança (> 0.7) durante um período contínuo de 1 a 2 segundos (padrão: 1.5s).
+    """
+
+    def __init__(self, duracao_minima=1.5, limiar_conf=0.7):
+        self.duracao_minima = duracao_minima
+        self.limiar_conf = limiar_conf
+        self.estado = "Calibração"
+        self.tempo_inicio_visivel = None
+
+    def resetar(self):
+        """Reinicia o estado para 'Calibração' e limpa o tempo acumulado."""
+        self.estado = "Calibração"
+        self.tempo_inicio_visivel = None
+
+    def limpar(self):
+        """Compatibilidade com o protocolo de filtros do IAFit."""
+        self.resetar()
+
+    def atualizar(self, keypoints_data, config_exercicio):
+        """Avalia os keypoints e atualiza o estado da máquina de calibração.
+
+        Retorna (estado, pronto_para_treino, progresso_porc).
+        """
+        if self.estado == "Treinando":
+            return self.estado, True, 100
+
+        visivel = _verificar_confianca_landmarks(keypoints_data, config_exercicio, self.limiar_conf)
+        agora = time.time()
+
+        if visivel:
+            if self.tempo_inicio_visivel is None:
+                self.tempo_inicio_visivel = agora
+            tempo_decorrido = agora - self.tempo_inicio_visivel
+            progresso = min(100, int((tempo_decorrido / self.duracao_minima) * 100))
+            if tempo_decorrido >= self.duracao_minima:
+                self.estado = "Treinando"
+                return self.estado, True, 100
+            return self.estado, False, progresso
+        else:
+            self.tempo_inicio_visivel = None
+            return self.estado, False, 0
+
+
+_calibrador_global = GerenciadorCalibracao()
+
+
+def obter_calibrador(filtros):
+    """Obtém ou instancia o gerenciador de calibração associado aos filtros ou global."""
+    if filtros and isinstance(filtros, dict):
+        if 'calibracao' not in filtros:
+            filtros['calibracao'] = GerenciadorCalibracao()
+        return filtros['calibracao']
+    return _calibrador_global
+
+
+def obter_landmarks_principais(keypoints_data, config_exercicio):
+    """Identifica os índices dos landmarks COCO fundamentais para o exercício atual."""
+    if not keypoints_data or len(keypoints_data) < 17:
+        return []
+
+    nome = config_exercicio.get("nome", "")
+    if "Polichinelo" in nome:
+        return [5, 6, 9, 10, 11, 12, 15, 16]
+
+    lados = config_exercicio.get("lados", {})
+    if not lados:
+        return [5, 6, 11, 12]
+
+    melhor_lado, _ = selecionar_melhor_lado(keypoints_data, lados)
+    lado_alvo = melhor_lado if melhor_lado else "esq"
+
+    indices = list(lados.get(lado_alvo, ()))
+    postura = config_exercicio.get("postura", {})
+    if lado_alvo in postura:
+        for idx in postura[lado_alvo][:2]:
+            if idx not in indices:
+                indices.append(idx)
+
+    return indices
+
+
+def _verificar_confianca_landmarks(keypoints_data, config_exercicio, limiar_conf=0.7):
+    """Verifica se todos os landmarks principais estão visíveis com confiança > limiar_conf."""
+    if not keypoints_data or len(keypoints_data) < 17:
+        return False
+
+    indices = obter_landmarks_principais(keypoints_data, config_exercicio)
+    if not indices:
+        return False
+
+    for idx in indices:
+        if idx >= len(keypoints_data):
+            return False
+        conf = keypoints_data[idx][2]
+        if conf <= limiar_conf:
+            return False
+
+    return True
+
+
+def _gerar_resultado_calibracao(keypoints_data, config_exercicio, progresso, filtros):
+    """Gera o dicionário de resultado no frame durante o estado de Calibração."""
+    contador = filtros.get('repeticoes', {}).get('total') if filtros else None
+    cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+
+    ponto_texto = (30, 90)
+    melhor_lado = "esq"
+    coords = None
+    coords_postura = None
+    coords_bracos = None
+
+    if keypoints_data and len(keypoints_data) >= 17:
+        lados = config_exercicio.get("lados", {})
+        if lados:
+            melhor_lado, _ = selecionar_melhor_lado(keypoints_data, lados)
+            if not melhor_lado:
+                melhor_lado = "esq"
+            if melhor_lado in lados:
+                c_idxs = lados[melhor_lado]
+                if all(c < len(keypoints_data) and keypoints_data[c][2] > 0.3 for c in c_idxs):
+                    coords = (_pt(keypoints_data[c_idxs[0]]), _pt(keypoints_data[c_idxs[1]]), _pt(keypoints_data[c_idxs[2]]))
+                    ponto_texto = keypoints_data[c_idxs[1]][:2]
+
+    feedback = f"Calibrando ({progresso}%)... Fique em posicao"
+    if progresso == 0:
+        feedback = "Calibracao: Posicione o corpo na camera"
+
+    return {
+        "lado": melhor_lado,
+        "porc": progresso,
+        "feedback": feedback,
+        "cor": (0, 255, 255),
+        "coords": coords,
+        "coords_postura": coords_postura,
+        "coords_bracos": coords_bracos,
+        "ponto_texto": ponto_texto,
+        "alerta_assimetria": False,
+        "angulo_braco_esq": None,
+        "angulo_braco_dir": None,
+        "reps": contador.reps if contador else 0,
+        "segundos": cronometro.segundos if cronometro else 0,
+        "postura_correta": True,
+        "fase": "calibracao",
+        "estado": "Calibração",
+        "fora_enquadramento": False,
+        "fadiga_detectada": False
+    }
+
+
 def resetar_cooldown_voz():
-    """Reinicia o cooldown dos alertas de voz e fadiga."""
+    """Reinicia o cooldown dos alertas de voz, fadiga e calibração."""
     global ultimo_aviso, ultimo_aviso_fadiga
     ultimo_aviso = 0
     ultimo_aviso_fadiga = 0
+    _calibrador_global.resetar()
 
 
 def _executar_aviso_voz(mensagem, cooldown=4):
@@ -91,6 +247,8 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
 
     # Deteção de Saída de Enquadramento
     if verificar_fora_enquadramento(keypoints_data, config_exercicio):
+        calibrador = obter_calibrador(filtros)
+        calibrador.resetar()
         eh_isometrico = config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", "")
         if eh_isometrico:
             cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
@@ -113,8 +271,19 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
             "angulo_braco_dir": None,
             "reps": contador.reps if contador else 0,
             "segundos": cronometro.segundos if cronometro else 0,
-            "fase": "fora"
+            "fase": "fora",
+            "estado": "Fora"
         }]
+
+    # Fase de Calibração Inicial (estado 'Calibração' -> 'Treinando')
+    calibrador = obter_calibrador(filtros)
+    estado_anterior = calibrador.estado
+    estado, pronto, progresso = calibrador.atualizar(keypoints_data, config_exercicio)
+    if not pronto:
+        return [_gerar_resultado_calibracao(keypoints_data, config_exercicio, progresso, filtros)]
+
+    if estado_anterior == "Calibração" and estado == "Treinando":
+        _executar_aviso_voz("Calibração concluída! Inicie o exercício")
 
     # Desvio para exercícios isométricos baseados em tempo
     if config_exercicio.get("tipo") == "isometrico" or "Prancha" in config_exercicio.get("nome", ""):
@@ -191,7 +360,7 @@ def processar_exercicio(keypoints_data, config_exercicio, filtros):
         "lado": melhor_lado, "porc": porc, "feedback": feedback, "cor": cor,
         "coords": (p1, p2, p3), "coords_postura": coords_postura, "coords_bracos": coords_bracos, "ponto_texto": p2,
         "alerta_assimetria": alerta_assimetria, "angulo_braco_esq": angulo_esq, "angulo_braco_dir": angulo_dir,
-        "reps": reps, "fase": fase, "fadiga_detectada": fadiga_detectada
+        "reps": reps, "fase": fase, "fadiga_detectada": fadiga_detectada, "estado": "Treinando"
     }]
 
 
@@ -254,14 +423,26 @@ def processar_prancha(landmarks, filtros, largura=None, altura=None):
         cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
         if cronometro:
             cronometro.ultimo_tempo = None
+        calibrador = obter_calibrador(filtros)
+        calibrador.resetar()
         _executar_aviso_voz("Atenção, volte para a câmara")
         segundos = cronometro.segundos if cronometro else 0
         return [{
             "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
             "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
             "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
-            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora",
+            "estado": "Fora"
         }]
+
+    calibrador = obter_calibrador(filtros)
+    estado_anterior = calibrador.estado
+    estado, pronto, progresso = calibrador.atualizar(keypoints_data, config)
+    if not pronto:
+        return [_gerar_resultado_calibracao(keypoints_data, config, progresso, filtros)]
+
+    if estado_anterior == "Calibração" and estado == "Treinando":
+        _executar_aviso_voz("Calibração concluída! Inicie o exercício")
 
     validacao = validar_postura_prancha(keypoints_data, filtros)
     if not validacao:
@@ -463,14 +644,26 @@ def processar_prancha_lateral(landmarks, filtros, largura=None, altura=None):
         cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
         if cronometro:
             cronometro.ultimo_tempo = None
+        calibrador = obter_calibrador(filtros)
+        calibrador.resetar()
         _executar_aviso_voz("Atenção, volte para a câmara")
         segundos = cronometro.segundos if cronometro else 0
         return [{
             "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
             "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
             "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
-            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora",
+            "estado": "Fora"
         }]
+
+    calibrador = obter_calibrador(filtros)
+    estado_anterior = calibrador.estado
+    estado, pronto, progresso = calibrador.atualizar(keypoints_data, config)
+    if not pronto:
+        return [_gerar_resultado_calibracao(keypoints_data, config, progresso, filtros)]
+
+    if estado_anterior == "Calibração" and estado == "Treinando":
+        _executar_aviso_voz("Calibração concluída! Inicie o exercício")
 
     validacao = validar_postura_prancha_lateral(keypoints_data, filtros)
     if not validacao:
@@ -585,14 +778,26 @@ def processar_agachamento_isometrico(landmarks, filtros, largura=None, altura=No
         cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
         if cronometro:
             cronometro.ultimo_tempo = None
+        calibrador = obter_calibrador(filtros)
+        calibrador.resetar()
         _executar_aviso_voz("Atenção, volte para a câmara")
         segundos = cronometro.segundos if cronometro else 0
         return [{
             "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
             "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
             "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
-            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora"
+            "reps": segundos, "segundos": segundos, "postura_correta": False, "fase": "fora",
+            "estado": "Fora"
         }]
+
+    calibrador = obter_calibrador(filtros)
+    estado_anterior = calibrador.estado
+    estado, pronto, progresso = calibrador.atualizar(keypoints_data, config)
+    if not pronto:
+        return [_gerar_resultado_calibracao(keypoints_data, config, progresso, filtros)]
+
+    if estado_anterior == "Calibração" and estado == "Treinando":
+        _executar_aviso_voz("Calibração concluída! Inicie o exercício")
 
     validacao = validar_postura_agachamento_isometrico(keypoints_data, filtros)
     if not validacao:
@@ -634,7 +839,8 @@ def processar_agachamento_isometrico(landmarks, filtros, largura=None, altura=No
         "reps": segundos,
         "segundos": segundos,
         "postura_correta": postura_correta,
-        "fase": fase
+        "fase": fase,
+        "estado": "Treinando"
     }]
 
 
@@ -644,14 +850,26 @@ def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
     config = EXERCICIOS.get("30", {})
 
     if verificar_fora_enquadramento(keypoints_data, config):
+        calibrador = obter_calibrador(filtros)
+        calibrador.resetar()
         _executar_aviso_voz("Atenção, volte para a câmara")
         contador = filtros.get('repeticoes', {}).get('total') if filtros else None
         return [{
             "fora_enquadramento": True, "feedback": "FORA DE ENQUADRAMENTO", "cor": (0, 0, 255),
             "porc": 0, "coords": None, "coords_postura": None, "coords_bracos": None, "ponto_texto": (30, 90),
             "alerta_assimetria": False, "angulo_braco_esq": None, "angulo_braco_dir": None,
-            "reps": contador.reps if contador else 0, "segundos": 0, "fase": "fora"
+            "reps": contador.reps if contador else 0, "segundos": 0, "fase": "fora",
+            "estado": "Fora"
         }]
+
+    calibrador = obter_calibrador(filtros)
+    estado_anterior = calibrador.estado
+    estado, pronto, progresso = calibrador.atualizar(keypoints_data, config)
+    if not pronto:
+        return [_gerar_resultado_calibracao(keypoints_data, config, progresso, filtros)]
+
+    if estado_anterior == "Calibração" and estado == "Treinando":
+        _executar_aviso_voz("Calibração concluída! Inicie o exercício")
 
     res_poli = validar_polichinelo(keypoints_data, filtros)
     if not res_poli:
@@ -707,7 +925,8 @@ def processar_polichinelo(landmarks, filtros, largura=None, altura=None):
         "angulo_braco_dir": None,
         "reps": reps,
         "fase": fase,
-        "fadiga_detectada": fadiga_detectada
+        "fadiga_detectada": fadiga_detectada,
+        "estado": "Treinando"
     }]
 
 

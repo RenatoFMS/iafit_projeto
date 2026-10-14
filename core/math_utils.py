@@ -4,16 +4,35 @@ from collections import deque
 import numpy as np
 from core.voz_client import falar
 
-def calcular_angulo(a, b, c):
-    """Calcula o ângulo exato entre três pontos articulares."""
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-    radianos = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
-    angulo = np.abs(radianos * 180.0 / np.pi)
+def _calcular_angulo_2d(a, b, c):
+    """Plano B: ângulo 2D (X, Y) via math.atan2, para modelos sem profundidade (YOLO/COCO)."""
+    radianos = math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(a[1] - b[1], a[0] - b[0])
+    angulo = abs(math.degrees(radianos))
     if angulo > 180.0:
         angulo = 360.0 - angulo
     return float(angulo)
+
+
+def calcular_angulo(a, b, c):
+    """Calcula o ângulo (em graus) no vértice b formado pelos pontos a, b e c.
+
+    - Pontos 3D (X, Y, Z): usa vetores com numpy, ângulo = arccos(dot / (norm1 * norm2)),
+      o que evita a distorção de perspetiva do cálculo 2D.
+    - Pontos 2D (X, Y) ou dimensões mistas: recorre ao cálculo 2D com math.atan2.
+    """
+    if len(a) >= 3 and len(b) >= 3 and len(c) >= 3:
+        pa = np.array(a[:3], dtype=float)
+        pb = np.array(b[:3], dtype=float)
+        pc = np.array(c[:3], dtype=float)
+        vetor1 = pa - pb  # ponto 1 -> ponto 2 (vértice)
+        vetor2 = pc - pb  # ponto 3 -> ponto 2 (vértice)
+        norma1 = np.linalg.norm(vetor1)
+        norma2 = np.linalg.norm(vetor2)
+        if norma1 == 0 or norma2 == 0:
+            return 0.0
+        cos_angulo = np.dot(vetor1, vetor2) / (norma1 * norma2)
+        return float(np.degrees(np.arccos(np.clip(cos_angulo, -1.0, 1.0))))
+    return _calcular_angulo_2d(a, b, c)
 
 
 def calcular_porcentagem(angulo, angulo_inicio, angulo_fim):

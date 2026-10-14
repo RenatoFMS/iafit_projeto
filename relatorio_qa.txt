@@ -1,0 +1,21 @@
+
+==================================================
+            RELATÓRIO DE QA - IAFIT
+==================================================
+Vídeo: 2.mp4
+Nome do Exercício: Agachamento
+Total de Repetições: 4
+Erros de Postura contabilizados: 13
+Fadiga Detetada (Sim/Não): Não
+Gasto Calórico Estimado: 5.7 kcal
+==================================================
+
+
+==================================================
+             SUMÁRIO TOTAL DE QA
+==================================================
+Total de Vídeos Processados: 1
+Testes Bem-Sucedidos: 1
+Testes que Falharam (0 repetições detetadas): 0
+Taxa de Sucesso: 100.0%
+==================================================

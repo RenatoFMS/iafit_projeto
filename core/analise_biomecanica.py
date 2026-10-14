@@ -35,6 +35,33 @@ def _obter_coord_conf(landmark):
     return (0.0, 0.0), 0.0
 
 
+def _obter_z(landmark):
+    """Extrai a coordenada de profundidade Z de um landmark MediaPipe (ou 0.0 se inexistente)."""
+    if hasattr(landmark, 'z'):
+        return float(landmark.z)
+    if isinstance(landmark, dict):
+        return float(landmark.get('z', 0.0))
+    return 0.0
+
+
+def _pt(keypoint):
+    """Devolve o ponto articular de um keypoint [x, y, conf(, z)].
+
+    Retorna (x, y, z) se o keypoint tiver profundidade (MediaPipe) ou (x, y) caso contrário
+    (YOLO/COCO), o que ativa automaticamente o cálculo 2D de fallback em calcular_angulo.
+    """
+    if len(keypoint) > 3:
+        return (keypoint[0], keypoint[1], keypoint[3])
+    return (keypoint[0], keypoint[1])
+
+
+def _ponto_acima(ponto, deslocamento=50):
+    """Cria um ponto de referência vertical imaginário acima de `ponto` (mesma profundidade Z)."""
+    if len(ponto) > 2:
+        return (ponto[0], ponto[1] - deslocamento, ponto[2])
+    return (ponto[0], ponto[1] - deslocamento)
+
+
 def criar_detector_pose(
     static_image_mode=False,
     model_complexity=1,
@@ -60,22 +87,27 @@ def criar_detector_pose(
 
 
 def landmarks_mediapipe_para_keypoints(landmarks, largura=None, altura=None):
-    """Converte landmarks do MediaPipe (33 pontos) para o formato [x, y, confiança] do COCO (17 pontos).
+    """Converte landmarks do MediaPipe (33 pontos) para o formato [x, y, confiança, z] do COCO (17 pontos).
 
+    A confiança permanece no índice 2 (compatível com o formato COCO [x, y, conf]); a profundidade
+    z é anexada no índice 3.
     Se largura e altura forem fornecidas, converte as coordenadas normalizadas [0, 1]
-    para as coordenadas de pixel da imagem.
-    Se os landmarks já estiverem no formato COCO (17 pontos), retorna-os diretamente.
+    para as coordenadas de pixel da imagem. O MediaPipe expressa z aproximadamente na mesma escala
+    de x, por isso z é escalado pela largura para manter os eixos X, Y e Z comparáveis.
+    Se os landmarks já estiverem no formato COCO (17 pontos), retorna-os diretamente (sem z -> fallback 2D).
     """
     if len(landmarks) == 17 and isinstance(landmarks[0], (list, tuple)) and not hasattr(landmarks[0], 'x'):
         return landmarks
     kps = []
     for i in _MP_PARA_COCO:
         (x, y), conf = _obter_coord_conf(landmarks[i])
+        z = _obter_z(landmarks[i])
         if largura is not None and altura is not None:
             if 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0:
                 x = x * largura
                 y = y * altura
-        kps.append([x, y, conf])
+                z = z * largura
+        kps.append([x, y, conf, z])
     return kps
 
 
@@ -109,9 +141,9 @@ def calcular_amplitude_movimento(keypoints_data, config_exercicio, melhor_lado, 
     Retorna (porc, angulo_suave, (p1, p2, p3)).
     """
     p1_idx, p2_idx, p3_idx = config_exercicio["lados"][melhor_lado]
-    p1 = keypoints_data[p1_idx][:2]
-    p2 = keypoints_data[p2_idx][:2]
-    p3 = keypoints_data[p3_idx][:2]
+    p1 = _pt(keypoints_data[p1_idx])
+    p2 = _pt(keypoints_data[p2_idx])
+    p3 = _pt(keypoints_data[p3_idx])
 
     angulo_bruto = calcular_angulo(p1, p2, p3)
     filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
@@ -171,18 +203,18 @@ def analisar_seguranca_postura(keypoints_data, config_exercicio, melhor_lado, fi
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return postura_segura, coords_postura, angulo_seg_suave
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
 
     ponto3_valido = True
     if config_exercicio.get("postura_vertical"):
         # Cria uma linha vertical imaginária 50 pixels acima do ponto de apoio
-        sp3 = (sp2[0], sp2[1] - 50)
+        sp3 = _ponto_acima(sp2)
     else:
         s3_idx = config_exercicio["postura"][melhor_lado][2]
         if keypoints_data[s3_idx][2] > 0.5:
-            sp3 = keypoints_data[s3_idx][:2]
+            sp3 = _pt(keypoints_data[s3_idx])
         else:
             ponto3_valido = False
 
@@ -208,9 +240,9 @@ def extrair_coordenadas_bracos(keypoints_data, config_exercicio, melhor_lado):
 
     b1_idx, b2_idx, b3_idx = config_exercicio["bracos"][melhor_lado]
     if keypoints_data[b1_idx][2] > 0.5 and keypoints_data[b2_idx][2] > 0.5:
-        bp1 = keypoints_data[b1_idx][:2]
-        bp2 = keypoints_data[b2_idx][:2]
-        bp3 = keypoints_data[b3_idx][:2] if keypoints_data[b3_idx][2] > 0.5 else bp2
+        bp1 = _pt(keypoints_data[b1_idx])
+        bp2 = _pt(keypoints_data[b2_idx])
+        bp3 = _pt(keypoints_data[b3_idx]) if keypoints_data[b3_idx][2] > 0.5 else bp2
         return (bp1, bp2, bp3)
     return None
 
@@ -224,8 +256,8 @@ def calcular_assimetria(keypoints_data):
     if any(keypoints_data[i][2] < 0.5 for i in indices):
         return None, None, False
 
-    pts_esq = [keypoints_data[i][:2] for i in BRACO_ESQ]
-    pts_dir = [keypoints_data[i][:2] for i in BRACO_DIR]
+    pts_esq = [_pt(keypoints_data[i]) for i in BRACO_ESQ]
+    pts_dir = [_pt(keypoints_data[i]) for i in BRACO_DIR]
     angulo_esq = calcular_angulo(*pts_esq)
     angulo_dir = calcular_angulo(*pts_dir)
     alerta = abs(angulo_esq - angulo_dir) > LIMITE_ASSIMETRIA
@@ -245,24 +277,24 @@ def verificar_assimetria_bracos(landmarks_ou_keypoints):
         if any(coords_confs[idx][1] <= 0.5 for idx in indices_bracos):
             return False, 0.0, None, None
 
-        p_ombro_esq, p_cotovelo_esq, p_pulso_esq = (
-            coords_confs[11][0], coords_confs[13][0], coords_confs[15][0]
-        )
-        p_ombro_dir, p_cotovelo_dir, p_pulso_dir = (
-            coords_confs[12][0], coords_confs[14][0], coords_confs[16][0]
-        )
+        def _xyz(idx):
+            (x, y), _ = coords_confs[idx]
+            return (x, y, _obter_z(landmarks_ou_keypoints[idx]))
+
+        p_ombro_esq, p_cotovelo_esq, p_pulso_esq = _xyz(11), _xyz(13), _xyz(15)
+        p_ombro_dir, p_cotovelo_dir, p_pulso_dir = _xyz(12), _xyz(14), _xyz(16)
     else:
         # Formato COCO (17 keypoints)
         indices_bracos = BRACO_ESQ + BRACO_DIR
         if any(landmarks_ou_keypoints[i][2] <= 0.5 for i in indices_bracos):
             return False, 0.0, None, None
 
-        p_ombro_esq = landmarks_ou_keypoints[5][:2]
-        p_cotovelo_esq = landmarks_ou_keypoints[7][:2]
-        p_pulso_esq = landmarks_ou_keypoints[9][:2]
-        p_ombro_dir = landmarks_ou_keypoints[6][:2]
-        p_cotovelo_dir = landmarks_ou_keypoints[8][:2]
-        p_pulso_dir = landmarks_ou_keypoints[10][:2]
+        p_ombro_esq = _pt(landmarks_ou_keypoints[5])
+        p_cotovelo_esq = _pt(landmarks_ou_keypoints[7])
+        p_pulso_esq = _pt(landmarks_ou_keypoints[9])
+        p_ombro_dir = _pt(landmarks_ou_keypoints[6])
+        p_cotovelo_dir = _pt(landmarks_ou_keypoints[8])
+        p_pulso_dir = _pt(landmarks_ou_keypoints[10])
 
     angulo_esq = calcular_angulo(p_ombro_esq, p_cotovelo_esq, p_pulso_esq)
     angulo_dir = calcular_angulo(p_ombro_dir, p_cotovelo_dir, p_pulso_dir)
@@ -288,9 +320,9 @@ def validar_postura_prancha(landmarks_ou_keypoints, filtros=None):
     if not melhor_lado:
         return None
 
-    p1 = keypoints_data[indices[0]][:2]  # Ombro
-    p2 = keypoints_data[indices[1]][:2]  # Quadril
-    p3 = keypoints_data[indices[2]][:2]  # Tornozelo
+    p1 = _pt(keypoints_data[indices[0]])  # Ombro
+    p2 = _pt(keypoints_data[indices[1]])  # Quadril
+    p3 = _pt(keypoints_data[indices[2]])  # Tornozelo
 
     angulo_bruto = calcular_angulo(p1, p2, p3)
     filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
@@ -312,10 +344,10 @@ def validar_postura_remada(keypoints_data, melhor_lado, filtros=None):
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return True, None, None
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
-    sp3 = (sp2[0], sp2[1] - 50)  # Linha vertical imaginária
+    sp3 = _ponto_acima(sp2)  # Linha vertical imaginária
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
     filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
@@ -338,9 +370,9 @@ def validar_postura_supino(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
         return True, None, None
 
-    p_quadril = keypoints_data[q_idx][:2]
-    p_ombro = keypoints_data[o_idx][:2]
-    p_cotovelo = keypoints_data[c_idx][:2]
+    p_quadril = _pt(keypoints_data[q_idx])
+    p_ombro = _pt(keypoints_data[o_idx])
+    p_cotovelo = _pt(keypoints_data[c_idx])
     coords_postura = (p_ombro, p_cotovelo)
 
     angulo_bruto = calcular_angulo(p_quadril, p_ombro, p_cotovelo)
@@ -364,9 +396,9 @@ def validar_postura_elevacao_lateral(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
         return True, None, None
 
-    p_quadril = keypoints_data[q_idx][:2]
-    p_ombro = keypoints_data[o_idx][:2]
-    p_cotovelo = keypoints_data[c_idx][:2]
+    p_quadril = _pt(keypoints_data[q_idx])
+    p_ombro = _pt(keypoints_data[o_idx])
+    p_cotovelo = _pt(keypoints_data[c_idx])
     coords_postura = (p_ombro, p_cotovelo)
 
     angulo_bruto = calcular_angulo(p_quadril, p_ombro, p_cotovelo)
@@ -390,9 +422,9 @@ def validar_postura_elevacao_pelvica(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, q_idx, j_idx)):
         return True, None, None
 
-    p_ombro = keypoints_data[o_idx][:2]
-    p_quadril = keypoints_data[q_idx][:2]
-    p_joelho = keypoints_data[j_idx][:2]
+    p_ombro = _pt(keypoints_data[o_idx])
+    p_quadril = _pt(keypoints_data[q_idx])
+    p_joelho = _pt(keypoints_data[j_idx])
     coords_postura = (p_ombro, p_quadril)
 
     angulo_bruto = calcular_angulo(p_ombro, p_quadril, p_joelho)
@@ -421,10 +453,10 @@ def validar_postura_sumo(landmarks_ou_keypoints, melhor_lado=None, filtros=None)
         kps = landmarks_ou_keypoints
         if any(kps[i][2] < 0.5 for i in (5, 6, 15, 16)):
             return True, None, None
-        p_oe = kps[5][:2]
-        p_od = kps[6][:2]
-        p_te = kps[15][:2]
-        p_td = kps[16][:2]
+        p_oe = _pt(kps[5])
+        p_od = _pt(kps[6])
+        p_te = _pt(kps[15])
+        p_td = _pt(kps[16])
 
     dist_ombros = abs(p_oe[0] - p_od[0])
     dist_pes = abs(p_te[0] - p_td[0])
@@ -457,7 +489,7 @@ def validar_barra_fixa(landmarks_ou_keypoints, melhor_lado=None, filtros=None):
         kps = landmarks_ou_keypoints
         if kps[0][2] < 0.5 or (kps[9][2] < 0.5 and kps[10][2] < 0.5):
             return False, None, None
-        p_nariz = kps[0][:2]
+        p_nariz = _pt(kps[0])
         pulsos_y = []
         if kps[9][2] >= 0.5: pulsos_y.append(kps[9][1])
         if kps[10][2] >= 0.5: pulsos_y.append(kps[10][1])
@@ -484,9 +516,9 @@ def validar_postura_prancha_lateral(landmarks_ou_keypoints, filtros=None):
     if not melhor_lado:
         return None
 
-    p1 = keypoints_data[indices[0]][:2]  # Ombro
-    p2 = keypoints_data[indices[1]][:2]  # Quadril
-    p3 = keypoints_data[indices[2]][:2]  # Tornozelo
+    p1 = _pt(keypoints_data[indices[0]])  # Ombro
+    p2 = _pt(keypoints_data[indices[1]])  # Quadril
+    p3 = _pt(keypoints_data[indices[2]])  # Tornozelo
 
     angulo_bruto = calcular_angulo(p1, p2, p3)
     filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
@@ -509,9 +541,9 @@ def validar_postura_elevacao_frontal(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, q_idx, t_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[o_idx][:2]
-    sp2 = keypoints_data[q_idx][:2]
-    sp3 = keypoints_data[t_idx][:2]
+    sp1 = _pt(keypoints_data[o_idx])
+    sp2 = _pt(keypoints_data[q_idx])
+    sp3 = _pt(keypoints_data[t_idx])
     coords_postura = (sp1, sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -535,9 +567,9 @@ def validar_postura_triceps_testa(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[q_idx][:2]
-    sp2 = keypoints_data[o_idx][:2]
-    sp3 = keypoints_data[c_idx][:2]
+    sp1 = _pt(keypoints_data[q_idx])
+    sp2 = _pt(keypoints_data[o_idx])
+    sp3 = _pt(keypoints_data[c_idx])
     coords_postura = (sp2, sp3)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -560,9 +592,9 @@ def validar_postura_crucifixo(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (o_idx, c_idx, p_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[o_idx][:2]
-    sp2 = keypoints_data[c_idx][:2]
-    sp3 = keypoints_data[p_idx][:2]
+    sp1 = _pt(keypoints_data[o_idx])
+    sp2 = _pt(keypoints_data[c_idx])
+    sp3 = _pt(keypoints_data[p_idx])
     coords_postura = (sp1, sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -584,10 +616,10 @@ def validar_postura_stiff_unilateral(keypoints_data, melhor_lado, filtros=None):
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return True, None, None
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
-    sp3 = (sp2[0], sp2[1] - 50)
+    sp3 = _ponto_acima(sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
     filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
@@ -609,9 +641,9 @@ def validar_postura_panturrilha(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[q_idx][:2]
-    sp2 = keypoints_data[j_idx][:2]
-    sp3 = keypoints_data[t_idx][:2]
+    sp1 = _pt(keypoints_data[q_idx])
+    sp2 = _pt(keypoints_data[j_idx])
+    sp3 = _pt(keypoints_data[t_idx])
     coords_postura = (sp1, sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -633,10 +665,10 @@ def validar_postura_bulgaro(keypoints_data, melhor_lado, filtros=None):
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return True, None, None
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
-    sp3 = (sp2[0], sp2[1] - 50)
+    sp3 = _ponto_acima(sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
     filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
@@ -657,10 +689,10 @@ def validar_postura_encolhimento(keypoints_data, melhor_lado, filtros=None):
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return True, None, None
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
-    sp3 = (sp2[0], sp2[1] - 50)
+    sp3 = _ponto_acima(sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
     filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
@@ -730,9 +762,9 @@ def validar_postura_abdominal_infra(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[q_idx][:2]
-    sp2 = keypoints_data[j_idx][:2]
-    sp3 = keypoints_data[t_idx][:2]
+    sp1 = _pt(keypoints_data[q_idx])
+    sp2 = _pt(keypoints_data[j_idx])
+    sp3 = _pt(keypoints_data[t_idx])
     coords_postura = (sp1, sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -754,10 +786,10 @@ def validar_postura_remada_alta(keypoints_data, melhor_lado, filtros=None):
     if keypoints_data[s1_idx][2] <= 0.5 or keypoints_data[s2_idx][2] <= 0.5:
         return True, None, None
 
-    sp1 = keypoints_data[s1_idx][:2]
-    sp2 = keypoints_data[s2_idx][:2]
+    sp1 = _pt(keypoints_data[s1_idx])
+    sp2 = _pt(keypoints_data[s2_idx])
     coords_postura = (sp1, sp2)
-    sp3 = (sp2[0], sp2[1] - 50)
+    sp3 = _ponto_acima(sp2)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
     filtro_post = filtros.get('postura', {}).get(melhor_lado) if filtros else None
@@ -779,9 +811,9 @@ def validar_postura_bom_dia(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, j_idx, t_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[q_idx][:2]
-    sp2 = keypoints_data[j_idx][:2]
-    sp3 = keypoints_data[t_idx][:2]
+    sp1 = _pt(keypoints_data[q_idx])
+    sp2 = _pt(keypoints_data[j_idx])
+    sp3 = _pt(keypoints_data[t_idx])
     coords_postura = (sp2, sp3)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -804,9 +836,9 @@ def validar_postura_triceps_coice(keypoints_data, melhor_lado, filtros=None):
     if any(keypoints_data[i][2] <= 0.5 for i in (q_idx, o_idx, c_idx)):
         return True, None, None
 
-    sp1 = keypoints_data[q_idx][:2]
-    sp2 = keypoints_data[o_idx][:2]
-    sp3 = keypoints_data[c_idx][:2]
+    sp1 = _pt(keypoints_data[q_idx])
+    sp2 = _pt(keypoints_data[o_idx])
+    sp3 = _pt(keypoints_data[c_idx])
     coords_postura = (sp2, sp3)
 
     angulo_bruto = calcular_angulo(sp1, sp2, sp3)
@@ -828,9 +860,9 @@ def validar_postura_agachamento_isometrico(landmarks_ou_keypoints, filtros=None)
     if not melhor_lado:
         return None
 
-    p1 = keypoints_data[indices[0]][:2]  # Quadril
-    p2 = keypoints_data[indices[1]][:2]  # Joelho
-    p3 = keypoints_data[indices[2]][:2]  # Tornozelo
+    p1 = _pt(keypoints_data[indices[0]])  # Quadril
+    p2 = _pt(keypoints_data[indices[1]])  # Joelho
+    p3 = _pt(keypoints_data[indices[2]])  # Tornozelo
 
     angulo_bruto = calcular_angulo(p1, p2, p3)
     filtro_amp = filtros.get('amplitude', {}).get(melhor_lado) if filtros else None
@@ -860,10 +892,10 @@ def validar_polichinelo(landmarks_ou_keypoints, filtros=None):
     if any(p >= len(keypoints_data) or keypoints_data[p][2] < 0.3 for p in pontos_obrigatorios):
         return None
 
-    p_ombro_esq, p_ombro_dir = keypoints_data[5][:2], keypoints_data[6][:2]
-    p_pulso_esq, p_pulso_dir = keypoints_data[9][:2], keypoints_data[10][:2]
-    p_quadril_esq, p_quadril_dir = keypoints_data[11][:2], keypoints_data[12][:2]
-    p_tornozelo_esq, p_tornozelo_dir = keypoints_data[15][:2], keypoints_data[16][:2]
+    p_ombro_esq, p_ombro_dir = _pt(keypoints_data[5]), _pt(keypoints_data[6])
+    p_pulso_esq, p_pulso_dir = _pt(keypoints_data[9]), _pt(keypoints_data[10])
+    p_quadril_esq, p_quadril_dir = _pt(keypoints_data[11]), _pt(keypoints_data[12])
+    p_tornozelo_esq, p_tornozelo_dir = _pt(keypoints_data[15]), _pt(keypoints_data[16])
 
     larg_ombros = max(20.0, abs(p_ombro_dir[0] - p_ombro_esq[0]))
     y_ombros = (p_ombro_esq[1] + p_ombro_dir[1]) / 2.0

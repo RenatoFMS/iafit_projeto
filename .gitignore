@@ -4,3 +4,5 @@ __pycache__/
 *.pt
 firebase_key.json
 firebase-admin==6.2.0
+temp_voz_*.mp3
+dataset_qa/

@@ -5,6 +5,8 @@
 Executa a inferência biomecânica em vídeos gravados, validando a matemática 3D,
 contagem de repetições ou tempo isométrico, deteção de erros de postura,
 fadiga muscular e estimativa de gasto calórico sem interface gráfica nem voz.
+Pode ser executado para um vídeo individual (--video e --id) ou em lote sequencial
+para todos os vídeos da pasta 'dataset_qa/'.
 """
 
 import argparse
@@ -56,28 +58,29 @@ def parse_args():
     parser.add_argument(
         "--video",
         type=str,
-        required=True,
-        help="Caminho para o ficheiro de vídeo (.mp4, .avi, etc.)."
+        default=None,
+        help="Caminho para o ficheiro de vídeo (.mp4, .avi, etc.). Se omitido, processa a pasta dataset_qa/."
     )
     parser.add_argument(
         "--id",
         type=str,
-        required=True,
-        help="Chave do exercício (de 1 a 30)."
+        default=None,
+        help="Chave do exercício (de 1 a 30). Se omitido, extrai do nome do ficheiro em dataset_qa/."
     )
     return parser.parse_args()
 
 
 def executar_teste(video_path, id_ex):
+    """Processa um único vídeo e imprime o respetivo relatório de QA."""
     # Validação do arquivo de vídeo
     if not os.path.isfile(video_path):
         print(f"Erro: O ficheiro de vídeo '{video_path}' não foi encontrado.")
-        sys.exit(1)
+        return None
 
     id_str = str(id_ex).strip()
     if id_str not in EXERCICIOS:
         print(f"Erro: Exercício ID '{id_str}' inválido. IDs válidos: 1 a {len(EXERCICIOS)}.")
-        sys.exit(1)
+        return None
 
     config = EXERCICIOS[id_str]
     nome_exercicio = config.get("nome", f"Exercício {id_str}")
@@ -91,7 +94,19 @@ def executar_teste(video_path, id_ex):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Erro: Falha ao abrir o ficheiro de vídeo '{video_path}'.")
-        sys.exit(1)
+        return {
+            "id": id_str,
+            "video": os.path.basename(video_path),
+            "nome": nome_exercicio,
+            "eh_isometrico": eh_isometrico,
+            "resultado_str": "Erro ao abrir vídeo",
+            "reps": 0,
+            "segundos": 0,
+            "erros_postura": 0,
+            "fadiga": "Não",
+            "calorias": 0.0,
+            "sucesso": False,
+        }
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps is None or fps <= 0 or (isinstance(fps, float) and (fps != fps)):
@@ -171,7 +186,7 @@ def executar_teste(video_path, id_ex):
             tem_erro_frame = False
             if resultados:
                 for res in resultados:
-                    if res.get("fora_enquadramento"):
+                    if res.get("fora_enquadramento") or res.get("fase") == "calibracao":
                         continue
 
                     if res.get("fadiga_detectada"):
@@ -209,10 +224,13 @@ def executar_teste(video_path, id_ex):
         total_metrica_str = f"{segundos_isom}s"
         tempo_serie = float(segundos_isom) if segundos_isom > 0 else tempo_total_video
         fadiga_str = "Não"
+        sucesso_teste = segundos_isom > 0
+        total_reps = 0
     else:
         contador = filtros['repeticoes']['total']
         total_reps = contador.reps
         total_metrica_str = str(total_reps)
+        segundos_isom = 0
 
         # Tempo de execução da série para cálculo calórico
         if total_reps > 0 and contador.tempo_inicio_serie is not None:
@@ -224,27 +242,142 @@ def executar_teste(video_path, id_ex):
         if verificar_fadiga(contador.tempos_repeticoes):
             fadiga_detectada = True
         fadiga_str = "Sim" if fadiga_detectada else "Não"
+        sucesso_teste = total_reps > 0
 
     gasto_calorico = calcular_calorias(tempo_serie, met_ex, peso_kg=70.0)
 
-    # Relatório formatado no terminal
+    campo_metrica = "Tempo Isométrico" if eh_isometrico else "Total de Repetições"
+    relatorio_texto = (
+        "\n" + "=" * 50 + "\n"
+        "            RELATÓRIO DE QA - IAFIT\n"
+        + "=" * 50 + "\n"
+        f"Vídeo: {os.path.basename(video_path)}\n"
+        f"Nome do Exercício: {nome_exercicio}\n"
+        f"{campo_metrica}: {total_metrica_str}\n"
+        f"Erros de Postura contabilizados: {erros_postura}\n"
+        f"Fadiga Detetada (Sim/Não): {fadiga_str}\n"
+        f"Gasto Calórico Estimado: {gasto_calorico:.1f} kcal\n"
+        + "=" * 50 + "\n"
+    )
+    print(relatorio_texto)
+
+    return {
+        "id": id_str,
+        "video": os.path.basename(video_path),
+        "nome": nome_exercicio,
+        "eh_isometrico": eh_isometrico,
+        "resultado_str": total_metrica_str,
+        "reps": total_reps,
+        "segundos": segundos_isom,
+        "erros_postura": erros_postura,
+        "fadiga": fadiga_str,
+        "calorias": gasto_calorico,
+        "sucesso": sucesso_teste,
+        "relatorio_texto": relatorio_texto,
+    }
+
+
+def executar_lote_pasta(pasta_dataset="dataset_qa"):
+    """Itera e processa sequencialmente todos os vídeos .mp4 da pasta informada."""
+    if not os.path.isdir(pasta_dataset):
+        print(f"Erro: A diretoria '{pasta_dataset}' não foi encontrada.")
+        sys.exit(1)
+
+    ficheiros = [f for f in os.listdir(pasta_dataset) if f.lower().endswith(".mp4")]
+    if not ficheiros:
+        print(f"Aviso: Nenhum ficheiro .mp4 encontrado na diretoria '{pasta_dataset}'.")
+        sys.exit(0)
+
+    # Ordenação natural dos arquivos numéricos (ex: 1.mp4, 2.mp4, 10.mp4)
+    def chave_ordenacao(nome):
+        base = os.path.splitext(nome)[0]
+        return (0, int(base)) if base.isdigit() else (1, base)
+
+    ficheiros_ordenados = sorted(ficheiros, key=chave_ordenacao)
+
     print("\n" + "=" * 50)
-    print("            RELATÓRIO DE QA - IAFIT")
+    print(f"   INICIANDO TESTES EM LOTE: {len(ficheiros_ordenados)} VÍDEOS ENCONTRADOS")
     print("=" * 50)
-    print(f"Nome do Exercício: {nome_exercicio}")
-    if eh_isometrico:
-        print(f"Tempo Isométrico: {total_metrica_str}")
-    else:
-        print(f"Total de Repetições: {total_metrica_str}")
-    print(f"Erros de Postura contabilizados: {erros_postura}")
-    print(f"Fadiga Detetada (Sim/Não): {fadiga_str}")
-    print(f"Gasto Calórico Estimado: {gasto_calorico:.1f} kcal")
-    print("=" * 50 + "\n")
+
+    resultados_lote = []
+    relatorios_detalhados = []
+    bem_sucedidos = 0
+    falhas = 0
+    falhas_detalhes = []
+
+    for nome_arquivo in ficheiros_ordenados:
+        id_ex = os.path.splitext(nome_arquivo)[0]
+        caminho_video = os.path.join(pasta_dataset, nome_arquivo)
+
+        if id_ex not in EXERCICIOS:
+            print(f"\n[Aviso] Ficheiro '{nome_arquivo}' ignorado: ID '{id_ex}' não existe no catálogo de exercícios.")
+            continue
+
+        print(f">>> Processando [{id_ex}] {EXERCICIOS[id_ex]['nome']} ({nome_arquivo})...")
+        try:
+            res = executar_teste(caminho_video, id_ex)
+            if res is not None:
+                resultados_lote.append(res)
+                if res.get("relatorio_texto"):
+                    relatorios_detalhados.append(res["relatorio_texto"])
+                if res["sucesso"]:
+                    bem_sucedidos += 1
+                else:
+                    falhas += 1
+                    falhas_detalhes.append(f"ID {id_ex} - {res['nome']} ({nome_arquivo})")
+        except Exception as e:
+            falhas += 1
+            nome_ex = EXERCICIOS.get(id_ex, {}).get("nome", "Desconhecido")
+            falhas_detalhes.append(f"ID {id_ex} - {nome_ex} (Erro: {e})")
+            print(f"Erro inesperado no vídeo {nome_arquivo}: {e}")
+
+    total_processados = len(resultados_lote)
+    taxa_sucesso = (bem_sucedidos / total_processados * 100.0) if total_processados > 0 else 0.0
+
+    # Sumário final
+    sumario_texto = (
+        "\n" + "=" * 50 + "\n"
+        "             SUMÁRIO TOTAL DE QA\n"
+        + "=" * 50 + "\n"
+        f"Total de Vídeos Processados: {total_processados}\n"
+        f"Testes Bem-Sucedidos: {bem_sucedidos}\n"
+        f"Testes que Falharam (0 repetições detetadas): {falhas}\n"
+        f"Taxa de Sucesso: {taxa_sucesso:.1f}%\n"
+    )
+    if falhas_detalhes:
+        sumario_texto += "-" * 50 + "\n"
+        sumario_texto += "Exercícios com Falha (0 repetições detetadas):\n"
+        for f in falhas_detalhes:
+            sumario_texto += f" - {f}\n"
+    sumario_texto += "=" * 50 + "\n"
+
+    print(sumario_texto)
+
+    # Exportação de todo o relatório detalhado e do sumário final para relatorio_qa.txt
+    caminho_exportacao = "relatorio_qa.txt"
+    conteudo_completo = "".join(relatorios_detalhados) + "\n" + sumario_texto
+    try:
+        with open(caminho_exportacao, "w", encoding="utf-8") as f:
+            f.write(conteudo_completo)
+        print(f"Relatório de QA exportado com sucesso para: {caminho_exportacao}\n")
+    except Exception as e:
+        print(f"Erro ao exportar {caminho_exportacao}: {e}\n")
 
 
 def main():
     args = parse_args()
-    executar_teste(args.video, args.id)
+
+    # Se ambos os argumentos forem nulos (None), processa todos os vídeos de dataset_qa/
+    if args.video is None and args.id is None:
+        executar_lote_pasta("dataset_qa")
+    elif args.video is not None and args.id is not None:
+        res = executar_teste(args.video, args.id)
+        if res is None:
+            sys.exit(1)
+    else:
+        print("Erro: Forneça ambos os argumentos (--video e --id) para testar um vídeo individual,")
+        print("ou omita ambos para processar sequencialmente todos os vídeos da pasta 'dataset_qa/'.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
