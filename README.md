@@ -1,58 +1,126 @@
- IAFit - Motor de Visão Computacional 🏋️‍♂️👁️
+# 🏋️‍♂️ IAFit - Motor de Visão Computacional
 
-O **IAFit** é o motor de inteligência artificial e visão computacional desenvolvido como parte do Trabalho de Conclusão de Curso (TCC) em Desenvolvimento de Sistemas. O objetivo do sistema é monitorizar, analisar e corrigir a execução de exercícios físicos em tempo real utilizando apenas a câmara web do utilizador, enviando os dados processados para um painel gamificado.
+O **IAFit - Motor de Visão Computacional** é o núcleo Back-end do Trabalho de Conclusão de Curso (TCC) focado no acompanhamento inteligente de treinos físicos. Utilizando o **Google MediaPipe Pose**, o motor realiza análise biomecânica tridimensional (3D) em tempo real através da webcam, efetuando contagem de repetições e tempo isométrico, deteção algorítmica de fadiga muscular, estimativa de gasto calórico, correção postural por voz natural, sincronização na nuvem via **Firebase Firestore** e validação contínua através de um sistema automatizado de **Quality Assurance (QA)**.
+
+---
 
 ## ✨ Funcionalidades Principais
 
-* **Rastreamento Biomecânico em Tempo Real:** Mapeamento de pontos articulares do corpo humano com alta precisão e baixa latência.
-* **Módulo Matemático Independente:** Cálculo vetorial de ângulos para determinar as fases concêntricas e excêntricas de cada movimento.
-* **Feedback de Postura e Assimetria:** Deteção de desvios no eixo corporal (ex: descida excessiva do quadril na flexão ou assimetria nos braços).
-* **Arquitetura "Vertical Slice":** Sincronização automática e em tempo real dos treinos concluídos com a base de dados na nuvem.
+* 🎯 **Análise 3D de 30 Exercícios com MediaPipe Pose:** Mapeamento articular tridimensional (`x, y, z`) para exercícios compostos, isolados e isométricos, avaliando fases concêntricas, excêntricas, desvios posturais e assimetria bilateral.
+* ⚡ **Deteção Algorítmica de Fadiga e Cálculo de Gasto Calórico:** Monitorização da cadência de execução para identificar perda de velocidade concêntrica (fadiga muscular) e estimativa precisa de gasto energético baseada no equivalente metabólico (MET) de cada exercício.
+* 🛡️ **Fase de Calibração Inicial:** Máquina de estados que valida a presença e estabilidade das articulações-chave com alta confiança (`visibility > 0.7`) antes de iniciar a contagem, eliminando falsos positivos durante o posicionamento do utilizador.
+* 🔊 **Feedback por Voz Natural (gTTS) em Tempo Real:** Orientação auditiva assíncrona com controlo de *cooldown* inteligente para corrigir erros biomecânicos e alertar sobre fadiga sem bloquear o processamento de vídeo.
+* ☁️ **Integração na Nuvem (Firebase Firestore):** Sincronização automática dos dados da sessão (repetições válidas, tempo sob tensão, calorias, fadiga e histórico de erros) diretamente para o Firestore.
+* 🧪 **Pipeline de Qualidade (QA) Automatizado com `yt-dlp`:** Ferramentas integradas para recolha automatizada de vídeos curtos de referência e execução de testes em lote sem necessidade de webcam.
 
-## 🏋️ Exercícios Suportados (MVP)
+---
 
-O motor suporta atualmente 5 exercícios fundamentais (compostos e isolados):
-1. **Rosca Bíceps** (Avaliação do ângulo do cotovelo e ombro)
-2. **Agachamento** (Avaliação do ângulo do joelho e quadril)
-3. **Flexão de Braços** (Avaliação de braços e alinhamento do tronco/quadril)
-4. **Desenvolvimento de Ombros** (Avaliação de extensão vertical)
-5. **Abdominal** (Avaliação da contração do tronco com limites de 150º a 70º)
+## 🏗️ Arquitetura e Clean Code
 
-## 🛠️ Tecnologias e Ferramentas
+O projeto foi desenhado em nível de produção seguindo rigorosamente os princípios de **Clean Code** e separação de responsabilidades:
 
-O sistema foi construído com uma arquitetura moderna e escalável:
+* **Tipagem Estática (PEP 484):** Todas as assinaturas de funções, métodos e estruturas de dados possuem *Type Hints* explícitos (`typing`).
+* **Documentação Padronizada:** Módulos, classes e funções documentados segundo o **Padrão Google de Docstrings** (`Args`, `Returns`).
+* **Design Modular:**
+  ```text
+  iafit_projeto/
+  ├── core/
+  │   ├── analise_biomecanica.py  # Geometria vetorial 3D, cálculo de ângulos, fadiga e calorias
+  │   ├── config_exercicios.py    # Catálogo parametrizado dos 30 exercícios e valores MET
+  │   ├── firebase_client.py      # Cliente de persistência na nuvem (Firebase Firestore)
+  │   ├── math_utils.py           # Filtros de suavização temporal, contadores e cronómetros
+  │   ├── motor_ia.py             # Máquina de estados, calibração e regras biomecânicas
+  │   └── voz_client.py           # Síntese e reprodução assíncrona de voz (gTTS / Pygame)
+  ├── main.py                     # Ponto de entrada principal (Modo Câmara / Treino em Tempo Real)
+  ├── baixar_videos.py            # Web scraper automatizado de vídeos curtos para QA (yt-dlp)
+  ├── testador_lote.py            # Executor de testes biomecânicos em lote e gerador de relatórios
+  └── requirements.txt            # Dependências do projeto
+  ```
 
-* **Linguagem Core:** Python 3
-* **Visão Computacional e IA:** OpenCV, Google MediaPipe, Ultralytics YOLOv8
-* **Backend e Persistência:** Google Firebase (Firestore) via `firebase-admin`
-* **Engenharia Assistida por IA:** O desenvolvimento da arquitetura, otimização de algoritmos matemáticos e refatoração do código foram acelerados com práticas avançadas de *Pair Programming* utilizando LLMs através da extensão **Antigravity** no VS Code.
+---
 
-## ☁️ Persistência de Dados (Google Firebase)
+## ⚙️ Pré-requisitos e Instalação
 
-O motor de Visão Computacional está totalmente integrado com o **Firebase Firestore**. 
-A arquitetura funciona através de um "Corte Vertical" (*Vertical Slice*): ao finalizar a execução de um exercício (trocando de movimento no teclado numérico ou fechando a aplicação com a tecla 'Q'), o sistema recolhe os dados locais e envia as repetições válidas e erros de postura automaticamente para a base de dados na nuvem, alimentando o Front-end (React) em tempo real.
+Siga os passos abaixo para configurar o ambiente de desenvolvimento localmente:
 
-**⚠️ Configuração Local (Segurança):**
-Para que a comunicação funcione na sua máquina local, é obrigatório colocar o ficheiro de credenciais `firebase_key.json` na raiz do projeto. Por motivos de segurança cibernética e boas práticas, este ficheiro está blindado pelo `.gitignore` e nunca é versionado no repositório público.
+### 1. Clonar o Repositório e Criar o Ambiente Virtual
 
-## 🚀 Como Rodar o Projeto Localmente
+```bash
+git clone https://github.com/RenatoFMS/iafit_projeto.git
+cd iafit_projeto
+python -m venv venv
+```
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/RenatoFMS/iafit_projeto.git
-   ```
-2. Entre na pasta do projeto e ative o seu ambiente virtual (venv):
-   ```bash
-   cd iafit_projeto
-   source venv/bin/activate  # No Linux (Ubuntu)
-   ```
-3. Instale as dependências rigorosas (garantindo compatibilidade do Protobuf):
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Certifique-se de que o ficheiro `firebase_key.json` está na raiz do projeto.
-5. Inicie o scanner da câmara:
-   ```bash
-   python main.py
-   ```
-*(Utilize as teclas de 1 a 5 para alternar os exercícios e 'Q' para guardar e sair).*
+### 2. Dependências de Áudio do Sistema (Linux / Ubuntu)
+
+> ⚠️ **Aviso Importante (Linux):** Antes de instalar os pacotes Python, instale as bibliotecas de desenvolvimento de áudio do sistema necessárias para o funcionamento de captura e reprodução sonora:
+
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python3-pyaudio
+```
+
+### 3. Ativar o Ambiente Virtual e Instalar Dependências
+
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 4. Configuração Obrigatória do Firebase
+
+Para habilitar a persistência na nuvem, coloque o ficheiro de credenciais da conta de serviço do Firebase na raiz do projeto com o nome exato:
+
+```text
+iafit_projeto/firebase_key.json
+```
+
+> 🔒 *Por razões de segurança, o ficheiro `firebase_key.json` está protegido no `.gitignore` e nunca deve ser comitado no repositório.*
+
+---
+
+## 🚀 Como Rodar o Projeto
+
+Para iniciar o motor de visão computacional em tempo real utilizando a webcam e a interface gráfica de treino:
+
+```bash
+python main.py
+```
+
+---
+
+## 🧪 Sistema de Quality Assurance (QA)
+
+O projeto conta com uma suíte de automação de QA para validar a precisão matemática 3D e a contagem de repetições em alto desempenho (com renderização gráfica e saída de voz desativadas).
+
+### 1. Baixar o Dataset de Vídeos de Teste
+
+O script `baixar_videos.py` pesquisa e descarrega automaticamente vídeos curtos (`<= 60s`) em codec H.264 (`avc1`) para cada um dos 30 exercícios na pasta `dataset_qa/`, registando as respetivas origens em `dataset_qa/urls_mapeamento.json`:
+
+```bash
+python baixar_videos.py
+```
+
+### 2. Executar a Validação em Lote
+
+Para processar todos os vídeos do diretório `dataset_qa/` sequencialmente e aferir a taxa de sucesso do motor biomecânico:
+
+```bash
+python testador_lote.py
+```
+
+Também é possível testar um único ficheiro de vídeo isoladamente passando os argumentos `--video` e `--id`:
+
+```bash
+python testador_lote.py --video dataset_qa/3_1.mp4 --id 3
+```
+
+### 📊 Relatórios Históricos de QA
+
+Ao concluir a execução em lote, o sistema apresenta o sumário estatístico no terminal e exporta automaticamente um ficheiro detalhado com carimbo de data e hora na pasta **`relatorios_qa/`**:
+
+```text
+relatorios_qa/relatorio_qa_YYYYMMDD_HHMM.txt
+```
+
+Cada relatório preserva o histórico de validação contendo o nome do vídeo, URL original do YouTube, total de repetições ou tempo isométrico, erros de postura contabilizados, deteção de fadiga, gasto calórico estimado e a taxa de sucesso global da bateria de testes.
