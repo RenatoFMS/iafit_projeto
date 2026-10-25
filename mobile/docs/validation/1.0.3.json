@@ -1,0 +1,115 @@
+{
+  "version": "1.0.3",
+  "buildNumber": 10004,
+  "flutter": "3.47.5",
+  "dart": "3.13.4",
+  "flutterAnalyze": "passed",
+  "flutterTests": 43,
+  "targetedPlayerTests": 4,
+  "androidReleaseBuild": "passed",
+  "webReleaseBuild": "passed",
+  "apk": {
+    "minAndroidApi": 24,
+    "nativeArchitectures": "native-code: 'arm64-v8a' 'armeabi-v7a' 'x86_64'",
+    "signatureVerified": true,
+    "zipAlignment16KVerified": true,
+    "sizeBytes": 102456991,
+    "sha256": "DC9566026273262EA93D9DE8D3CE7A96F1B8C59C82A1A49F2EF2987DB597F527"
+  },
+  "nativeEmulator": {
+    "api": 37,
+    "pageSize": 16384,
+    "webView": "Current WebView package (name, version): (com.google.android.webview, 145.0.7632.218)",
+    "audioMuted": true,
+    "camera": {
+      "ok": true,
+      "width": 320,
+      "height": 240,
+      "planes": 1,
+      "format": "nv21",
+      "poses": 0,
+      "note": "Emulated camera scene; this validates the native pipeline, not human movement accuracy"
+    },
+    "videos": [
+      {
+        "exercise": "Supino reto",
+        "requestedId": "EZMYCLKuGow",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 2.9079820343322753,
+        "id": "EZMYCLKuGow"
+      },
+      {
+        "exercise": "Agachamento livre",
+        "requestedId": "zgk71dUUt0Y",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 8.031838160217285,
+        "id": "zgk71dUUt0Y"
+      },
+      {
+        "exercise": "Rosca direta",
+        "requestedId": "c__3LAiXYOk",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 2.404724051498413,
+        "id": "c__3LAiXYOk"
+      },
+      {
+        "exercise": "Puxada frontal",
+        "requestedId": "pJM_rHhluK8",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 1.648033,
+        "id": "pJM_rHhluK8"
+      },
+      {
+        "exercise": "Desenvolvimento",
+        "requestedId": "L-iQfHVeuVg",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 1.6203601792907716,
+        "id": "L-iQfHVeuVg"
+      },
+      {
+        "exercise": "Tríceps pulley",
+        "requestedId": "BI881NpBDHs",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 1.8832928531341553,
+        "id": "BI881NpBDHs"
+      },
+      {
+        "exercise": "Prancha",
+        "requestedId": "qNRqGqESAWU",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 3.0849329694824217,
+        "id": "qNRqGqESAWU"
+      },
+      {
+        "exercise": "Elevação lateral",
+        "requestedId": "IwWvZ0rlNXs",
+        "playing": true,
+        "error": 0,
+        "state": 1,
+        "time": 1.7705928817443848,
+        "id": "IwWvZ0rlNXs"
+      }
+    ],
+    "passed": true
+  },
+  "physicalDeviceTested": false,
+  "limitations": [
+    "Emulated camera scene contained no person; zero poses does not validate human movement accuracy.",
+    "Counter accuracy, alignment and compatibility across physical Android devices remain pending.",
+    "The emulator had boot-time ANRs in System UI/Google services before the app launched; this is not a general UI performance benchmark."
+  ]
+}

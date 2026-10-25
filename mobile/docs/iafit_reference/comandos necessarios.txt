@@ -1,0 +1,2 @@
+py -m pip install ultralytics
+pip install opencv-python
