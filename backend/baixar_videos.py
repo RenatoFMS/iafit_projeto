@@ -17,7 +17,8 @@ def baixar_dataset() -> None:
     filtra por duração de até 60 segundos, descarrega até 5 vídeos no formato H.264
     e salva o mapeamento de URLs no arquivo dataset_qa/urls_mapeamento.json.
     """
-    pasta_destino = "dataset_qa"
+    pasta_backend = os.path.dirname(os.path.abspath(__file__))
+    pasta_destino = os.path.join(pasta_backend, "dataset_qa")
     os.makedirs(pasta_destino, exist_ok=True)
     caminho_mapa = os.path.join(pasta_destino, "urls_mapeamento.json")
 

@@ -19,10 +19,11 @@ _MP_PARA_COCO: List[int] = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 2
 
 
 def _obter_coord_conf(landmark: Any) -> Tuple[Tuple[float, float], float]:
-    """Extrai ((x, y), confianca) de um landmark MediaPipe ou estrutura equivalente.
+    """Extrai ((x, y), confianca) de um landmark MediaPipe, dicionário ou array.
 
     Suporta objetos MediaPipe (com atributos x, y, visibility/confidence),
-    listas/tuplas [x, y, conf] ou dicionários {'x': ..., 'y': ...}.
+    listas/tuplas [x, y, z, visibilidade] (33 pontos) ou [x, y, conf],
+    e dicionários {'x': ..., 'y': ..., 'z': ..., 'visibilidade'/'visibility': ...}.
 
     Args:
         landmark: Objeto MediaPipe, sequência ou dicionário contendo coordenadas.
@@ -32,21 +33,35 @@ def _obter_coord_conf(landmark: Any) -> Tuple[Tuple[float, float], float]:
     """
     if hasattr(landmark, 'x') and hasattr(landmark, 'y'):
         conf = getattr(landmark, 'visibility', getattr(landmark, 'confidence', 1.0))
-        return (landmark.x, landmark.y), conf
+        return (float(landmark.x), float(landmark.y)), float(conf)
     elif isinstance(landmark, (list, tuple)):
-        conf = landmark[2] if len(landmark) > 2 else 1.0
-        return (landmark[0], landmark[1]), conf
+        if len(landmark) >= 4:
+            conf = landmark[3]
+        elif len(landmark) > 2:
+            conf = landmark[2]
+        else:
+            conf = 1.0
+        return (float(landmark[0]), float(landmark[1])), float(conf)
     elif isinstance(landmark, dict):
-        conf = landmark.get('visibility', landmark.get('confidence', landmark.get('conf', 1.0)))
-        return (landmark['x'], landmark['y']), conf
+        conf = landmark.get(
+            'visibilidade',
+            landmark.get(
+                'visibility',
+                landmark.get(
+                    'likelihood',
+                    landmark.get('confidence', landmark.get('conf', 1.0)),
+                ),
+            ),
+        )
+        return (float(landmark.get('x', 0.0)), float(landmark.get('y', 0.0))), float(conf)
     return (0.0, 0.0), 0.0
 
 
 def _obter_z(landmark: Any) -> float:
-    """Extrai a coordenada de profundidade Z de um landmark MediaPipe (ou 0.0 se inexistente).
+    """Extrai a coordenada de profundidade Z de um landmark (ou 0.0 se inexistente).
 
     Args:
-        landmark: Objeto MediaPipe ou dicionário com a coordenada de profundidade.
+        landmark: Objeto MediaPipe, sequência [x, y, z, visibilidade] ou dicionário.
 
     Returns:
         Coordenada Z como float (ou 0.0 caso não esteja disponível).
@@ -55,6 +70,8 @@ def _obter_z(landmark: Any) -> float:
         return float(landmark.z)
     if isinstance(landmark, dict):
         return float(landmark.get('z', 0.0))
+    if isinstance(landmark, (list, tuple)) and len(landmark) >= 4:
+        return float(landmark[2])
     return 0.0
 
 
@@ -123,39 +140,83 @@ def criar_detector_pose(
     )
 
 
+def _normalizar_entrada_landmarks(landmarks: Any) -> Any:
+    """Normaliza um dicionário JSON de landmarks numa lista indexada de 33 pontos.
+
+    Args:
+        landmarks: Lista, tupla, dicionário ou coleção de landmarks.
+
+    Returns:
+        Sequência indexável de landmarks.
+    """
+    if isinstance(landmarks, dict):
+        if "landmarks" in landmarks:
+            landmarks = landmarks["landmarks"]
+        elif "pontos" in landmarks:
+            landmarks = landmarks["pontos"]
+        else:
+            return [
+                landmarks.get(
+                    i,
+                    landmarks.get(
+                        str(i),
+                        {"x": 0.0, "y": 0.0, "z": 0.0, "visibilidade": 0.0},
+                    ),
+                )
+                for i in range(33)
+            ]
+    return landmarks
+
+
 def landmarks_mediapipe_para_keypoints(
     landmarks: Any,
     largura: Optional[int] = None,
     altura: Optional[int] = None
 ) -> List[List[float]]:
-    """Converte landmarks do MediaPipe (33 pontos) para o formato [x, y, confiança, z] do COCO (17 pontos).
+    """Converte landmarks (33 pontos MediaPipe/ML Kit em objeto, dict ou array) para COCO (17 pontos).
 
     A confiança permanece no índice 2 (compatível com o formato COCO [x, y, conf]); a profundidade
     z é anexada no índice 3.
-    Se largura e altura forem fornecidas, converte as coordenadas normalizadas [0, 1]
-    para as coordenadas de pixel da imagem. O MediaPipe expressa z aproximadamente na mesma escala
-    de x, por isso z é escalado pela largura para manter os eixos X, Y e Z comparáveis.
-    Se os landmarks já estiverem no formato COCO (17 pontos), retorna-os diretamente (sem z -> fallback 2D).
+    Quando as coordenadas recebidas estão normalizadas em [0, 1], aplica a escala (largura, altura)
+    fornecida ou a escala de referência (640x480) para preservar as proporções geométricas.
+    Se os landmarks já estiverem no formato COCO (17 pontos), retorna-os diretamente.
 
     Args:
-        landmarks: Lista de 33 landmarks do MediaPipe ou lista pré-existente de keypoints.
+        landmarks: Lista/dicionário de 33 landmarks ou lista pré-existente de 17 keypoints COCO.
         largura: Largura da imagem em pixels para desnormalização (opcional).
         altura: Altura da imagem em pixels para desnormalização (opcional).
 
     Returns:
         Lista de 17 keypoints no formato [x, y, confianca, z].
     """
+    if landmarks is None:
+        return []
+    landmarks = _normalizar_entrada_landmarks(landmarks)
+    if len(landmarks) == 0:
+        return []
     if len(landmarks) == 17 and isinstance(landmarks[0], (list, tuple)) and not hasattr(landmarks[0], 'x'):
-        return landmarks
-    kps = []
+        return list(landmarks)
+    if len(landmarks) < 29:
+        return []
+
+    coords_extraidas: List[Tuple[float, float, float, float]] = []
+    todos_normalizados = True
     for i in _MP_PARA_COCO:
         (x, y), conf = _obter_coord_conf(landmarks[i])
         z = _obter_z(landmarks[i])
-        if largura is not None and altura is not None:
-            if 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0:
-                x = x * largura
-                y = y * altura
-                z = z * largura
+        if conf > 0.0 and not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
+            todos_normalizados = False
+        coords_extraidas.append((x, y, conf, z))
+
+    largura_escala = float(largura) if largura is not None else (640.0 if todos_normalizados else 1.0)
+    altura_escala = float(altura) if altura is not None else (480.0 if todos_normalizados else 1.0)
+
+    kps: List[List[float]] = []
+    for x, y, conf, z in coords_extraidas:
+        if todos_normalizados:
+            x = x * largura_escala
+            y = y * altura_escala
+            z = z * largura_escala
         kps.append([x, y, conf, z])
     return kps
 
@@ -1003,9 +1064,16 @@ def verificar_fora_enquadramento(
     if keypoints_data is None or len(keypoints_data) == 0:
         return True
 
-    # Suporta se receber landmarks MediaPipe diretamente
-    if hasattr(keypoints_data[0], 'x') or (len(keypoints_data) == 33 and not isinstance(keypoints_data[0], (list, tuple))):
+    # Suporta se receber landmarks (33 pontos em objeto, dicionário ou array) diretamente
+    if (
+        isinstance(keypoints_data, dict)
+        or hasattr(keypoints_data[0], 'x')
+        or isinstance(keypoints_data[0], dict)
+        or len(keypoints_data) >= 33
+    ):
         keypoints_data = landmarks_mediapipe_para_keypoints(keypoints_data)
+    if not keypoints_data:
+        return True
 
     nome = config_exercicio.get("nome", "")
     if "Polichinelo" in nome:

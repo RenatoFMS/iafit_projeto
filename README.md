@@ -24,17 +24,21 @@ O projeto foi desenhado em nível de produção seguindo rigorosamente os princ�
 * **Design Modular:**
   ```text
   iafit_projeto/
-  ├── core/
-  │   ├── analise_biomecanica.py  # Geometria vetorial 3D, cálculo de ângulos, fadiga e calorias
-  │   ├── config_exercicios.py    # Catálogo parametrizado dos 30 exercícios e valores MET
-  │   ├── firebase_client.py      # Cliente de persistência na nuvem (Firebase Firestore)
-  │   ├── math_utils.py           # Filtros de suavização temporal, contadores e cronómetros
-  │   ├── motor_ia.py             # Máquina de estados, calibração e regras biomecânicas
-  │   └── voz_client.py           # Síntese e reprodução assíncrona de voz (gTTS / Pygame)
-  ├── main.py                     # Ponto de entrada principal (Modo Câmara / Treino em Tempo Real)
-  ├── baixar_videos.py            # Web scraper automatizado de vídeos curtos para QA (yt-dlp)
-  ├── testador_lote.py            # Executor de testes biomecânicos em lote e gerador de relatórios
-  └── requirements.txt            # Dependências do projeto
+  ├── backend/                      # Motor Matemático e Biomecânico (Python)
+  │   ├── core/
+  │   │   ├── analise_biomecanica.py  # Geometria vetorial 3D, cálculo de ângulos, fadiga e calorias
+  │   │   ├── config_exercicios.py    # Catálogo parametrizado dos 30 exercícios e valores MET
+  │   │   ├── firebase_client.py      # Cliente de persistência na nuvem (Firebase Firestore)
+  │   │   ├── math_utils.py           # Filtros de suavização temporal, contadores e cronómetros
+  │   │   ├── motor_ia.py             # Máquina de estados, calibração e regras biomecânicas
+  │   │   ├── ponte_flutter.py        # API HTTP local (POST /analisar_pose, /exercicio, /finalizar)
+  │   │   └── voz_client.py           # Síntese e reprodução assíncrona de voz (gTTS / Pygame)
+  │   ├── main.py                     # Ponto de entrada da API biomecânica (Edge Computing + Cloud)
+  │   ├── baixar_videos.py            # Web scraper automatizado de vídeos curtos para QA (yt-dlp)
+  │   ├── testador_lote.py            # Executor de testes biomecânicos em lote e gerador de relatórios
+  │   └── requirements.txt            # Dependências do Back-end Python
+  ├── mobile/                       # Aplicativo Front-end (Flutter + Google ML Kit Pose + SQLite)
+  └── docs/                         # Documentação técnica, relatórios de QA e vídeos de teste
   ```
 
 ---
@@ -47,7 +51,7 @@ Siga os passos abaixo para configurar o ambiente de desenvolvimento localmente:
 
 ```bash
 git clone https://github.com/RenatoFMS/iafit_projeto.git
-cd iafit_projeto
+cd iafit_projeto/backend
 python -m venv venv
 ```
 
@@ -69,10 +73,10 @@ pip install -r requirements.txt
 
 ### 4. Configuração Obrigatória do Firebase
 
-Para habilitar a persistência na nuvem, coloque o ficheiro de credenciais da conta de serviço do Firebase na raiz do projeto com o nome exato:
+Para habilitar a persistência na nuvem, coloque o ficheiro de credenciais da conta de serviço do Firebase na pasta `backend/` com o nome exato:
 
 ```text
-iafit_projeto/firebase_key.json
+iafit_projeto/backend/firebase_key.json
 ```
 
 > 🔒 *Por razões de segurança, o ficheiro `firebase_key.json` está protegido no `.gitignore` e nunca deve ser comitado no repositório.*
@@ -81,11 +85,13 @@ iafit_projeto/firebase_key.json
 
 ## 🚀 Como Rodar o Projeto
 
-Para iniciar o motor de visão computacional em tempo real utilizando a webcam e a interface gráfica de treino:
+Para iniciar o servidor da API biomecânica:
 
 ```bash
-python main.py
+python backend/main.py
 ```
+
+> 📲 **App Flutter (`mobile/`):** o `backend/main.py` expõe uma API local (porta `8765`) que permite ao app Flutter (`mobile/`) enviar os pontos articulares extraídos via ML Kit (`POST /analisar_pose`), escolher o exercício e importar os treinos concluídos. Veja [docs/INTEGRACAO_FLUTTER.md](docs/INTEGRACAO_FLUTTER.md).
 
 ---
 
@@ -98,29 +104,29 @@ O projeto conta com uma suíte de automação de QA para validar a precisão mat
 O script `baixar_videos.py` pesquisa e descarrega automaticamente vídeos curtos (`<= 60s`) em codec H.264 (`avc1`) para cada um dos 30 exercícios na pasta `dataset_qa/`, registando as respetivas origens em `dataset_qa/urls_mapeamento.json`:
 
 ```bash
-python baixar_videos.py
+python backend/baixar_videos.py
 ```
 
 ### 2. Executar a Validação em Lote
 
-Para processar todos os vídeos do diretório `dataset_qa/` sequencialmente e aferir a taxa de sucesso do motor biomecânico:
+Para processar todos os vídeos do diretório `backend/dataset_qa/` sequencialmente e aferir a taxa de sucesso do motor biomecânico:
 
 ```bash
-python testador_lote.py
+python backend/testador_lote.py
 ```
 
 Também é possível testar um único ficheiro de vídeo isoladamente passando os argumentos `--video` e `--id`:
 
 ```bash
-python testador_lote.py --video dataset_qa/3_1.mp4 --id 3
+python backend/testador_lote.py --video backend/dataset_qa/3_1.mp4 --id 3
 ```
 
 ### 📊 Relatórios Históricos de QA
 
-Ao concluir a execução em lote, o sistema apresenta o sumário estatístico no terminal e exporta automaticamente um ficheiro detalhado com carimbo de data e hora na pasta **`relatorios_qa/`**:
+Ao concluir a execução em lote, o sistema apresenta o sumário estatístico no terminal e exporta automaticamente um ficheiro detalhado com carimbo de data e hora na pasta **`docs/relatorios_qa/`**:
 
 ```text
-relatorios_qa/relatorio_qa_YYYYMMDD_HHMM.txt
+docs/relatorios_qa/relatorio_qa_YYYYMMDD_HHMM.txt
 ```
 
 Cada relatório preserva o histórico de validação contendo o nome do vídeo, URL original do YouTube, total de repetições ou tempo isométrico, erros de postura contabilizados, deteção de fadiga, gasto calórico estimado e a taxa de sucesso global da bateria de testes.

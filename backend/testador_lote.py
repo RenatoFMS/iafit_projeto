@@ -52,6 +52,16 @@ from core.analise_biomecanica import (
 )
 from core.math_utils import FiltroSuavizacao, ContadorRepeticoes, CronometroIsometrico
 
+_PASTA_BACKEND = os.path.dirname(os.path.abspath(__file__))
+_PASTA_RAIZ = os.path.dirname(_PASTA_BACKEND)
+
+
+def _caminho_dataset_padrao() -> str:
+    """Resolve o diretório dataset_qa independentemente do diretório de execução."""
+    if os.path.isdir("dataset_qa"):
+        return "dataset_qa"
+    return os.path.join(_PASTA_BACKEND, "dataset_qa")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -87,7 +97,8 @@ def executar_teste(video_path, id_ex, url=None):
     # Se a URL não for fornecida diretamente, tenta buscar no mapeamento local
     if url is None:
         try:
-            with open("dataset_qa/urls_mapeamento.json", "r", encoding="utf-8") as f:
+            caminho_mapa_padrao = os.path.join(_caminho_dataset_padrao(), "urls_mapeamento.json")
+            with open(caminho_mapa_padrao, "r", encoding="utf-8") as f:
                 url_data = json.load(f).get(id_str, "N/A")
                 if isinstance(url_data, list):
                     nome_base = os.path.splitext(os.path.basename(video_path))[0]
@@ -407,8 +418,8 @@ def executar_lote_pasta(pasta_dataset="dataset_qa"):
 
     print(sumario_texto)
 
-    # Exportação de todo o relatório detalhado e do sumário final para relatorios_qa/
-    pasta_relatorios = "relatorios_qa"
+    # Exportação de todo o relatório detalhado e do sumário final para docs/relatorios_qa/
+    pasta_relatorios = os.path.join(_PASTA_RAIZ, "docs", "relatorios_qa")
     os.makedirs(pasta_relatorios, exist_ok=True)
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M")
     caminho_exportacao = os.path.join(pasta_relatorios, f"relatorio_qa_{timestamp_str}.txt")
@@ -426,7 +437,7 @@ def main():
 
     # Se ambos os argumentos forem nulos (None), processa todos os vídeos de dataset_qa/
     if args.video is None and args.id is None:
-        executar_lote_pasta("dataset_qa")
+        executar_lote_pasta(_caminho_dataset_padrao())
     elif args.video is not None and args.id is not None:
         res = executar_teste(args.video, args.id)
         if res is None:

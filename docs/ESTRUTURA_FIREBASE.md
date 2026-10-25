@@ -24,6 +24,12 @@ Este documento define a especificação técnica e o contrato de dados entre o m
 | `erros_postura` | `number` (integer) | `number` | Sim | Contagem de desvios posturais ou falhas de forma detectadas durante a execução da série. | `0` |
 | `calorias` | `number` (double) | `number` | Sim | Estimativa do gasto energético em quilocalorias ($kcal$), calculada com base na duração e no índice MET do exercício. | `3.45` |
 | `data` | `Timestamp` | `Timestamp` / `Date` | Sim | Timestamp gerado pelo servidor do Firestore (`firestore.SERVER_TIMESTAMP`) no momento da persistência. | `2026-10-13T19:45:00.000Z` |
+| `duracao_seg` | `number` (integer) | `number` | Não | Duração da série em segundos. *(Adicionado pela integração com o app Flutter; documentos antigos não o têm.)* | `40` |
+| `exercicio_id` | `string` \| `null` | `string \| null` | Não | Chave do exercício em `core/config_exercicios.py`. | `"3"` |
+| `isometrico` | `boolean` | `boolean` | Não | `true` quando `repeticoes` representa segundos. | `false` |
+
+> Os três campos opcionais são aditivos: o front-end React existente continua válido sem alterações.
+> O app Flutter **não lê o Firestore**: recebe os mesmos treinos pela API local descrita em [`INTEGRACAO_FLUTTER.md`](INTEGRACAO_FLUTTER.md).
 
 ---
 

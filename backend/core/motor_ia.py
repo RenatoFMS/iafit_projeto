@@ -328,10 +328,12 @@ def processar_exercicio(
 ) -> List[Dict[str, Any]]:
     """Processa a execução de um exercício dinâmico ou isométrico.
 
-    Orquestra a análise biomecânica, contagem de repetições e feedback sonoro.
+    Aceita diretamente 33 landmarks (em formato dicionário, array [x, y, z, visibilidade]
+    ou objetos MediaPipe) ou 17 keypoints COCO, orquestrando a análise biomecânica,
+    contagem de repetições e feedback sonoro sem depender da deteção de vídeo local.
 
     Args:
-        keypoints_data: Keypoints COCO ou landmarks MediaPipe no frame atual.
+        keypoints_data: Landmarks de 33 pontos (dict/array/MediaPipe) ou 17 keypoints COCO.
         config_exercicio: Dicionário com todas as configurações biomecânicas do exercício.
         filtros: Dicionário com contadores, cronômetros e instâncias de suavização.
 
@@ -339,6 +341,16 @@ def processar_exercicio(
         Lista com dicionários de telemetria e renderização visual para o frame.
     """
     global ultimo_aviso
+
+    if keypoints_data is not None:
+        if isinstance(keypoints_data, dict):
+            keypoints_data = landmarks_mediapipe_para_keypoints(keypoints_data)
+        elif len(keypoints_data) > 0 and (
+            hasattr(keypoints_data[0], "x")
+            or isinstance(keypoints_data[0], dict)
+            or len(keypoints_data) >= 33
+        ):
+            keypoints_data = landmarks_mediapipe_para_keypoints(keypoints_data)
 
     # Deteção de Saída de Enquadramento
     if verificar_fora_enquadramento(keypoints_data, config_exercicio):
@@ -452,7 +464,7 @@ def processar_exercicio(
 
     p1, p2, p3 = coords
     return [{
-        "lado": melhor_lado, "porc": porc, "feedback": feedback, "cor": cor,
+        "lado": melhor_lado, "porc": porc, "angulo": round(float(angulo_suave), 1), "feedback": feedback, "cor": cor,
         "coords": (p1, p2, p3), "coords_postura": coords_postura, "coords_bracos": coords_bracos, "ponto_texto": p2,
         "alerta_assimetria": alerta_assimetria, "angulo_braco_esq": angulo_esq, "angulo_braco_dir": angulo_dir,
         "reps": reps, "fase": fase, "fadiga_detectada": fadiga_detectada, "estado": "Treinando"

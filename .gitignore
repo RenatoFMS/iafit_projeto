@@ -1,8 +1,25 @@
-venv/
+# Python (Back-end)
+backend/venv/
+backend/__pycache__/
+backend/core/__pycache__/
 __pycache__/
-*.mp4
+venv/
+.env
 *.pt
+backend/firebase_key.json
 firebase_key.json
-firebase-admin==6.2.0
 temp_voz_*.mp3
+backend/dataset_qa/
 dataset_qa/
+backend/treinos_locais.jsonl
+treinos_locais.jsonl
+
+# Flutter (Front-end Mobile / Desktop)
+mobile/build/
+mobile/.dart_tool/
+
+# Vídeos e imagens de teste
+*.mp4
+*.avi
+
+*.avi
