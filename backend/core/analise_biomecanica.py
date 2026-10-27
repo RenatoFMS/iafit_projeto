@@ -283,6 +283,79 @@ def calcular_amplitude_movimento(
     return porc, angulo_suave, (p1, p2, p3)
 
 
+def log_calibracao_desenvolvimento(
+    keypoints_data: Optional[Sequence[Sequence[float]]],
+    fase: str,
+    porc: int = 0,
+    reps: int = 0,
+    melhor_lado: Optional[str] = None,
+    angulo_suave: Optional[float] = None,
+    angulo_tronco: Optional[float] = None,
+) -> None:
+    """Imprime temporariamente no terminal a fase e os ângulos de cotovelos/ombros em tempo real.
+
+    Auxilia na calibração empírica dos limiares ('inicio', 'fim' e 'limite_postura')
+    do exercício Desenvolvimento de Ombros em config_exercicios.py.
+
+    Args:
+        keypoints_data: Lista de 17 keypoints COCO [x, y, conf(, z)] do frame atual.
+        fase: Nome da fase atual ('calibracao', 'fora', 'base', 'subida', 'topo', 'descida').
+        porc: Percentual atual de execução (ou progresso de calibração).
+        reps: Total acumulado de repetições na série.
+        melhor_lado: Lado ativo selecionado pelo motor ('esq' ou 'dir').
+        angulo_suave: Ângulo principal suavizado usado pelo contador (opcional).
+        angulo_tronco: Ângulo de inclinação vertical do tronco (opcional).
+    """
+    def _calc_tripla(i1: int, i2: int, i3: int, limiar: float = 0.2) -> str:
+        if not keypoints_data or len(keypoints_data) <= max(i1, i2, i3):
+            return "  N/D "
+        if (
+            keypoints_data[i1][2] < limiar
+            or keypoints_data[i2][2] < limiar
+            or keypoints_data[i3][2] < limiar
+        ):
+            return "  N/D "
+        ang = calcular_angulo(
+            _pt(keypoints_data[i1]),
+            _pt(keypoints_data[i2]),
+            _pt(keypoints_data[i3]),
+        )
+        return f"{ang:5.1f}°"
+
+    cot_esq = _calc_tripla(5, 7, 9)    # Ombro Esq - Cotovelo Esq - Pulso Esq
+    cot_dir = _calc_tripla(6, 8, 10)   # Ombro Dir - Cotovelo Dir - Pulso Dir
+    omb_esq = _calc_tripla(11, 5, 7)   # Quadril Esq - Ombro Esq - Cotovelo Esq
+    omb_dir = _calc_tripla(12, 6, 8)   # Quadril Dir - Ombro Dir - Cotovelo Dir
+
+    if angulo_tronco is not None:
+        tronco_str = f"{angulo_tronco:5.1f}°"
+    elif keypoints_data and len(keypoints_data) > 12:
+        lado_ref = (5, 11) if keypoints_data[5][2] >= keypoints_data[6][2] else (6, 12)
+        if keypoints_data[lado_ref[0]][2] >= 0.2 and keypoints_data[lado_ref[1]][2] >= 0.2:
+            sp1 = _pt(keypoints_data[lado_ref[0]])
+            sp2 = _pt(keypoints_data[lado_ref[1]])
+            ang_t = calcular_angulo(sp1, sp2, _ponto_acima(sp2))
+            tronco_str = f"{ang_t:5.1f}°"
+        else:
+            tronco_str = "  N/D "
+    else:
+        tronco_str = "  N/D "
+
+    suave_str = (
+        f" (Suave {melhor_lado}: {angulo_suave:5.1f}°)"
+        if angulo_suave is not None and melhor_lado
+        else ""
+    )
+
+    print(
+        f"[DESENVOLVIMENTO] Fase: {fase:<10} | Porc: {porc:3d}% | Reps: {reps:2d} "
+        f"| Cotovelo(E/D): {cot_esq} / {cot_dir}{suave_str} "
+        f"| Ombro(E/D): {omb_esq} / {omb_dir} "
+        f"| Tronco: {tronco_str}",
+        flush=True,
+    )
+
+
 def analisar_seguranca_postura(
     keypoints_data: Sequence[Sequence[float]],
     config_exercicio: Dict[str, Any],

@@ -17,6 +17,7 @@ from core.analise_biomecanica import (
     landmarks_mediapipe_para_keypoints,
     selecionar_melhor_lado,
     calcular_amplitude_movimento,
+    log_calibracao_desenvolvimento,
     analisar_seguranca_postura,
     extrair_coordenadas_bracos,
     calcular_assimetria,
@@ -352,6 +353,8 @@ def processar_exercicio(
         ):
             keypoints_data = landmarks_mediapipe_para_keypoints(keypoints_data)
 
+    eh_desenvolvimento = "Desenvolvimento" in config_exercicio.get("nome", "")
+
     # Deteção de Saída de Enquadramento
     if verificar_fora_enquadramento(keypoints_data, config_exercicio):
         calibrador = obter_calibrador(filtros)
@@ -364,6 +367,13 @@ def processar_exercicio(
         _executar_aviso_voz("Atenção, volte para a câmara")
         contador = filtros.get('repeticoes', {}).get('total') if filtros else None
         cronometro = filtros.get('isometrico', {}).get('total') if filtros else None
+        if eh_desenvolvimento:
+            log_calibracao_desenvolvimento(
+                keypoints_data,
+                fase="fora",
+                porc=0,
+                reps=contador.reps if contador else 0,
+            )
         return [{
             "fora_enquadramento": True,
             "feedback": "FORA DE ENQUADRAMENTO",
@@ -387,6 +397,14 @@ def processar_exercicio(
     estado_anterior = calibrador.estado
     estado, pronto, progresso = calibrador.atualizar(keypoints_data, config_exercicio)
     if not pronto:
+        if eh_desenvolvimento:
+            contador_cal = filtros.get('repeticoes', {}).get('total') if filtros else None
+            log_calibracao_desenvolvimento(
+                keypoints_data,
+                fase="calibracao",
+                porc=progresso,
+                reps=contador_cal.reps if contador_cal else 0,
+            )
         return [_gerar_resultado_calibracao(keypoints_data, config_exercicio, progresso, filtros)]
 
     if estado_anterior == "Calibração" and estado == "Treinando":
@@ -427,9 +445,20 @@ def processar_exercicio(
             _executar_aviso_fadiga("Força, não desista, mantenha o ritmo!")
 
     # 4. Avaliação de segurança da postura
-    postura_segura, coords_postura, _ = analisar_seguranca_postura(
+    postura_segura, coords_postura, angulo_postura = analisar_seguranca_postura(
         keypoints_data, config_exercicio, melhor_lado, filtros
     )
+
+    if eh_desenvolvimento:
+        log_calibracao_desenvolvimento(
+            keypoints_data,
+            fase=fase,
+            porc=porc,
+            reps=reps,
+            melhor_lado=melhor_lado,
+            angulo_suave=angulo_suave,
+            angulo_tronco=angulo_postura,
+        )
 
     # 5. Mapeamento extra de coordenadas dos braços
     coords_bracos = extrair_coordenadas_bracos(keypoints_data, config_exercicio, melhor_lado)
