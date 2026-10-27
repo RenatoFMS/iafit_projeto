@@ -3,6 +3,8 @@ backend/venv/
 backend/__pycache__/
 backend/core/__pycache__/
 __pycache__/
+.pytest_cache/
+backend/.pytest_cache/
 venv/
 .env
 *.pt
