@@ -141,6 +141,67 @@ O arquivo `.apk` final será gerado em `mobile/build/app/outputs/flutter-apk/app
 
 ---
 
+## 🔌 Conexão Física Segura (Cabo USB)
+
+Para apresentações ao vivo e demonstrações perante a banca de avaliação — especialmente em laboratórios ou auditórios com redes Wi-Fi instáveis, isolamento de clientes (*AP Isolation*) ou *firewalls* institucionais — recomenda-se a utilização de tunelamento direto via cabo USB (**ADB Reverse**):
+
+1. Ative as **Opções do Programador** e a **Depuração USB** no dispositivo Android.
+2. Conecte o telemóvel ao computador via cabo USB e autorize a chave RSA exibida no ecrã do aparelho.
+3. No terminal do computador, execute o comando:
+   ```bash
+   adb reverse tcp:8765 tcp:8765
+   ```
+
+Este comando mapeia a porta `8765` do telemóvel diretamente para a porta `8765` do computador através do barramento USB. Assim, o aplicativo móvel comunica com o motor Python utilizando o endereço padrão já configurado (`http://127.0.0.1:8765`), garantindo **latência mínima e zero dependência de rede externa**.
+
+---
+
+## 🎓 Guia de Implantação Rápida (PC da Escola - Windows/Linux)
+
+Roteiro passo a passo para preparar e iniciar o Back-end em uma máquina limpa no dia da defesa do TCC (requer apenas **Python 3.10+** pré-instalado):
+
+### Passo 1: Obter o Projeto
+Clone o repositório oficial ou descompacte o ficheiro `.zip` do projeto numa pasta local:
+```bash
+git clone https://github.com/RenatoFMS/iafit_projeto.git
+cd iafit_projeto
+```
+*(Caso utilize o ficheiro `.zip`, extraia o conteúdo e abra o terminal na pasta extraída).*
+
+### Passo 2: Entrar no Diretório do Back-end
+```bash
+cd backend
+```
+
+### Passo 3: Criar o Ambiente Virtual Isolado
+```bash
+python -m venv venv
+```
+
+### Passo 4: Ativar o Ambiente Virtual
+
+* **No Windows (CMD / Prompt de Comando):**
+  ```cmd
+  venv\Scripts\activate
+  ```
+* **No Linux / macOS:**
+  ```bash
+  source venv/bin/activate
+  ```
+
+### Passo 5: Instalar as Dependências
+```bash
+pip install -r requirements.txt
+```
+
+### Passo 6: Iniciar o Motor Matemático IAFit
+```bash
+python main.py
+```
+Assim que a mensagem de inicialização surgir no terminal (`http://127.0.0.1:8765`), o servidor estará pronto para receber a conexão do aplicativo móvel (via `adb reverse tcp:8765 tcp:8765` ou rede local).
+
+---
+
 ## 🧪 Pipeline de Quality Assurance (QA)
 
 Para assegurar a precisão biomecânica sem depender da captura contínua por câmara, o projeto conta com ferramentas automatizadas de validação:
